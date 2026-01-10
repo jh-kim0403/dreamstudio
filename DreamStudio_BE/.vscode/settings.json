@@ -1,0 +1,18 @@
+{
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "askForPassword": true,
+            "driver": "PostgreSQL",
+            "name": "dreamstudio",
+            "database": "dreamstudio",
+            "username": "jae"
+        }
+    ]
+}

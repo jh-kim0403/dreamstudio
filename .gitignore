@@ -1,0 +1,9 @@
+# Secrets and env files
+.env
+.env.*
+
+# Project-specific secrets
+DreamStudio_BE/secret.txt
+
+# Backend env
+DreamStudio_BE/dreamstudio.env
