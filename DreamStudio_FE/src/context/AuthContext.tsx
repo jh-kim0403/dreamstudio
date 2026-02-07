@@ -1,5 +1,13 @@
 import React, { createContext } from 'react';
 
+export type LoginPayload = {
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  access_token: string;
+  refresh_token: string;
+};
 
 export interface AccessTokenContextType{
   userID: any;
@@ -12,9 +20,10 @@ export interface AuthContextType {
     token: string | null;
     isLoggedIn: boolean;
   
-    login: (data: any) => Promise<void>;
+    login: (data: LoginPayload) => Promise<void>;
     logout: () => void;
-    refreshToken: () => Promise<void>;
+    refreshToken: () => Promise<string | null>;
+    authFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
     updateProfile: (changes: any) => Promise<void>;
   }
 

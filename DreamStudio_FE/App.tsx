@@ -5,24 +5,28 @@
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native';
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
-import AuthContextProvider from './src/auth/Auth';
+import AuthContextProvider from './src/auth/AuthProvider';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text } from '@rneui/base';
+import React, { useContext } from 'react';
+import AuthContext from './src/context/AuthContext';
+import { StripeProvider } from '@stripe/stripe-react-native';
+
+
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51IaRKKFi3VeKp8O4EAEuWDIo4VYcQqgdJeE9TEnQbxNJTwl4OBstWX8zjUhnvhUbFYg2T5hLeGtWatpnW3kLKM5s00XdN4EUYu'; //change later
 
 const Stack = createNativeStackNavigator();
-const user = false; //Change to userAuth() later;
-
 function Navigation() {
+  const auth = useContext(AuthContext);
+  const user = auth?.isLoggedIn ?? false;
+
   return (
     <Stack.Navigator>
       {!user ? (
@@ -54,9 +58,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <LoginScreen />
       <AuthContextProvider>
-        <Text>s</Text>
+        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+          <NavigationContainer>
+            <Navigation />
+          </NavigationContainer>
+        </StripeProvider>
       </AuthContextProvider>
     </SafeAreaProvider>
   );
