@@ -11,9 +11,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     OPENAI_API_KEY: str
-    REDIS_URL: str
-    
+    CELERY_REDIS_URL: str
+    SLOWAPI_REDIS_URL: str
+    AWS_REGION: str
+    S3_BUCKET: str
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    STRIPE_SECRET_KEY: str
+
     class Config:
         env_file=BASE_DIR / "dreamstudio.env",
 
 settings = Settings()
+

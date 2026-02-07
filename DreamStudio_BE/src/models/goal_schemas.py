@@ -47,14 +47,14 @@ class Goal(Base):
     user_input = Column(Text)
     bounty_amount = Column(Integer, CheckConstraint("bounty_amount > 0"), nullable=False)
     deadline = Column(DateTime(timezone=True), nullable=False)
-    #verifcation_type = Column(Text,  CheckConstraint("verifcation_type IN ('photo','quiz')"), nullable=False)
     status = Column(
         String,
-        CheckConstraint("status IN ('pending', 'canceled', 'validating', 'finalized')"),
+        CheckConstraint("status IN ('pending', 'canceled', 'finalized', 'validating')"),
         server_default=text("'pending'"),
         nullable=False,
     )
-    final_status = Column(String, CheckConstraint("final_status IN ('completed', 'failed')"))
+    quiz_question_status = Column(String, CheckConstraint("quiz_question_status IN ('pending', 'failed', 'created', 'none')"), default="none")
+    verification_status = Column(String, CheckConstraint("verification_status IN ('completed', 'failed', 'not started')"), default="not started")
     finalized_at = Column(DateTime(timezone=True))
     stripe_setup_intent_id = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

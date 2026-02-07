@@ -10,7 +10,7 @@ Celery - Django (Async)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import auth_manual, auth_google, goals, auth_refresh
+from src.routes import auth_manual, auth_google, goals, auth_refresh, verifications, payments
 from src.gpt import apicalls# no leading dot
 
 app = FastAPI(title="DreamStudio Auth API")
@@ -29,3 +29,5 @@ app.include_router(auth_google.router)
 app.include_router(goals.router)
 app.include_router(auth_refresh.router)
 app.include_router(apicalls.router)
+app.include_router(verifications.router)
+app.include_router(payments.router)

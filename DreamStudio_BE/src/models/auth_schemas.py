@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, String, Boolean, DateTime, ForeignKey, Text, JSON, CheckConstraint
+    Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON, CheckConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID, INET, CITEXT
 from sqlalchemy.sql import func
@@ -14,6 +14,7 @@ class User(Base):
     first_name = Column(String)
     last_name = Column(String)
     photo_url = Column(String)
+    bounty_balance =Column(Integer, CheckConstraint("bounty_balance >= 0"), default=0, nullable=False)
     email_verified = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     role = Column(String, CheckConstraint("role IN ('user','admin')"), default="user")

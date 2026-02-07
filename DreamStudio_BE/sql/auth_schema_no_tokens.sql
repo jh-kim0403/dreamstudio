@@ -33,6 +33,7 @@ CREATE TABLE users (
   photo_url        TEXT,
   email_verified   BOOLEAN NOT NULL DEFAULT FALSE,
   is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+  role             TEXT NOT NULL CHECK (role IN ('admin', 'user')) DEFAULT 'user',
   signup_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_login_at    TIMESTAMPTZ,
@@ -66,7 +67,7 @@ CREATE TABLE auth_identities (
 
 DROP TRIGGER IF EXISTS trg_auth_identities_updated_at ON auth_identities;
 CREATE TRIGGER trg_auth_identities_updated_at
-BEFORE UPDATE ON auth_identities
+BEFORE UPDATE ON auth_identities    
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE UNIQUE INDEX ux_auth_identity_provider_account
@@ -111,22 +112,21 @@ CREATE TABLE goals (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id               UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   goal_type_id          UUID REFERENCES goal_types(id),
-
-  title                 TEXT NOT NULL,
-  description           TEXT,
-  user_input			TEXT,
+  title                 TEXT NOT NULL,    --"title": "Read the Bible",
+  description           TEXT,             --"description": "Read a passage",
+  user_input			      TEXT,             --"user_input": "Genesis 1" COULD BE WRONG BOOK FROM USER INPUT
   bounty_amount         INTEGER NOT NULL CHECK (bounty_amount > 0),  -- cents
   deadline              TIMESTAMPTZ NOT NULL,
 
-  --verification_type     TEXT NOT NULL CHECK (
-  --                       verification_type IN ('photo', 'quiz')
-  --                     ),
-
-  --verification_window   INTERVAL DEFAULT '6 hours',
+  verification_type     TEXT NOT NULL CHECK (
+                         verification_type IN ('photo', 'quiz')
+                       ),
 
   status                TEXT NOT NULL DEFAULT 'pending'
-                        CHECK (status IN ('pending', 'canceled', 'finalized', 'validating')),
-
+                        CHECK (status IN ('pending', 'canceled', 'finalized', 'validating')), 
+                        --Pending is the default when the goal is first created
+  quiz_question_status  TEXT NOT NULL DEFAULT 'none'
+                        CHECK (status IN ('pending', 'failed', 'created', 'none')),
   final_status          TEXT CHECK(final_status IN ('completed', 'failed')),
   finalized_at          TIMESTAMPTZ,
   
@@ -189,12 +189,11 @@ CREATE TABLE verification_photos (
 -- Quiz Questions (Generated from GPT)
 ----------------------------
 
-CREATE TABLE verification_quiz_questions (
+CREATE TABLE goal_quiz_questions (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  goal_id           UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
-  question_text     TEXT NOT NULL,
-  correct_answer    TEXT NOT NULL,
-  metadata          JSONB DEFAULT '{}'::jsonb,
+  goal_id           UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE ,
+  question          TEXT NOT NULL, 
+  answer            TEXT NOT NULL,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -205,7 +204,7 @@ CREATE INDEX ix_quiz_questions_goal_id ON verification_quiz_questions(goal_id);
 -- Quiz Answers (User-submitted)
 ----------------------------
 
-CREATE TABLE verification_quiz_answers (
+CREATE TABLE goal_quiz_user_input (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   verification_id   UUID NOT NULL REFERENCES verifications(id) ON DELETE CASCADE,
   question_id       UUID NOT NULL REFERENCES verification_quiz_questions(id),
@@ -305,6 +304,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 DROP TABLE IF EXISTS auth_identities CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS goals CASCADE;
+DROP TABLE IF EXISTS goal_types CASCADE;
 DROP TABLE IF EXISTS email_verifications CASCADE;
 DROP TABLE IF EXISTS password_resets CASCADE;
+DROP TABLE IF EXISTS goal_quiz_questions;
+DROP TABLE IF EXISTS goal_quiz_user_input;
 select * from users

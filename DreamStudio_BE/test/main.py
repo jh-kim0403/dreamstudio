@@ -1,5 +1,15 @@
-import requests
+import asyncio
+from src.gpt.apicalls import generate_questions
+from src.helpers.db import SessionLocal
 
-r = requests.post("http://127.0.0.1:8000/api/v1/openai/test")
-print(r.status_code)
-print(r.json())
+db = SessionLocal()
+
+async def main():
+    data = await generate_questions(
+        user_input="Genesis 1",
+        goal_type_id="ccf98a58-2dcc-44e2-8979-5cc9cb454a87",
+        db=db
+    )
+    print(data)
+
+asyncio.run(main())
