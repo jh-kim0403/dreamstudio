@@ -141,4 +141,50 @@ CREATE INDEX IF NOT EXISTS idx_bounty_tx_user_id ON bounty_transactions(user_id)
 CREATE INDEX IF NOT EXISTS idx_bounty_tx_status ON bounty_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_bounty_tx_created_at ON bounty_transactions(created_at);
 
+CREATE TABLE IF NOT EXISTS weekly_maintenance_costs (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  week_start        TIMESTAMPTZ NOT NULL,
+  week_end          TIMESTAMPTZ NOT NULL,
+  aws_cost_cents    INTEGER NOT NULL DEFAULT 0 CHECK (aws_cost_cents >= 0),
+  openai_cost_cents INTEGER NOT NULL DEFAULT 0 CHECK (openai_cost_cents >= 0),
+  fee_amount_cents  INTEGER NOT NULL DEFAULT 0 CHECK (fee_amount_cents >= 0),
+  source            TEXT NOT NULL DEFAULT 'automated',
+  notes             TEXT, 
+  meta              JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (week_start, week_end)
+);
+
+CREATE INDEX IF NOT EXISTS idx_weekly_maintenance_costs_week_start
+  ON weekly_maintenance_costs(week_start);
+
+CREATE TABLE IF NOT EXISTS weekly_pool_distributions (
+  id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  week_start             TIMESTAMPTZ NOT NULL,
+  week_end               TIMESTAMPTZ NOT NULL,
+  failed_pool_cents      INTEGER NOT NULL DEFAULT 0 CHECK (failed_pool_cents >= 0),
+  maintenance_fee_cents  INTEGER NOT NULL DEFAULT 0 CHECK (maintenance_fee_cents >= 0),
+  net_pool_cents         INTEGER NOT NULL DEFAULT 0 CHECK (net_pool_cents >= 0),
+  distributed_total_cents INTEGER NOT NULL DEFAULT 0 CHECK (distributed_total_cents >= 0),
+  successful_goals_count INTEGER NOT NULL DEFAULT 0 CHECK (successful_goals_count >= 0),
+  meta                   JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (week_start, week_end)
+);
+
+CREATE TABLE IF NOT EXISTS weekly_pool_distribution_items (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  distribution_id     UUID NOT NULL REFERENCES weekly_pool_distributions(id) ON DELETE CASCADE,
+  goal_id             UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+  user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  goal_bounty_cents   INTEGER NOT NULL CHECK (goal_bounty_cents > 0),
+  payout_cents        INTEGER NOT NULL CHECK (payout_cents >= 0),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (distribution_id, goal_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_weekly_pool_distribution_items_user_id
+  ON weekly_pool_distribution_items(user_id);
+
 COMMIT;

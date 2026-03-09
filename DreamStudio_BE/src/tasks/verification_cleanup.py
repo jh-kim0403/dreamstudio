@@ -5,7 +5,7 @@ from src.helpers.db import SessionLocal
 from src.models import verifications_schemas
 
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
+@celery_app.task(bind=True, max_retries=0, default_retry_delay=30)
 def cleanup_abandoned_photo_verifications(self):
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 

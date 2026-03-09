@@ -152,7 +152,7 @@ def confirm(
             meta=meta,
         )
         db.add(record)
-    goal.status = "in validation"
+    goal.status = "validating"
     db.commit()
     evaluate_photo_verification.delay(req.verification_id)
     return {"ok": True}

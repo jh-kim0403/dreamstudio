@@ -154,6 +154,14 @@ export default function HomeScreen() {
                 Purchase Bounty & Withdrawl
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                // @ts-expect-error: app-wide nav types not yet defined
+                navigation.navigate("Profile");
+              }}
+            >
+              <Text style={{ color: "#555", marginBottom: 6 }}>Profile</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
       </View>

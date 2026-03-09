@@ -1,5 +1,4 @@
 from src.models import verifications_schemas, goal_schemas, auth_schemas
-from datetime import datetime, timezone
 from src.models.verifications_models import UserSubmission
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -77,12 +76,11 @@ def evaluate_quiz_submission(
 
 
     if result == "pass":
-        goal.status = "finalized"
         goal.verification_status = "completed"
+        goal.status = "validating"
     else:
-        goal.status = "submitted"
         goal.verification_status = "failed"
-    goal.finalized_at = datetime.now(timezone.utc)
+        goal.status = "pending"
 
     verification = verifications_schemas.Verification(
         goal_id=goal_id,

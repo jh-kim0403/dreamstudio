@@ -13,6 +13,8 @@ from ..helpers.db import get_db
 from datetime import datetime, timezone
 import logging
 from src.tasks.quiz_tasks import generate_quiz_for_goal
+from src.tasks.deadline_tasks import finalize_goal_at_deadline
+from src.helpers.bounty_ledger_utils import apply_bounty_ledger_entry
 
 
 router = APIRouter(prefix="/api/v1/goals", tags=["Goals"])
@@ -40,14 +42,24 @@ def create_goal(
         deadline=payload.deadline,
         created_at=datetime.now(timezone.utc),
     )
-
     db.add(new_goal)
+    db.flush()
+    apply_bounty_ledger_entry(user_id=user_id, 
+                              goal_id=new_goal.id, 
+                              ledger_type="hold", 
+                              bounty_amount=payload.bounty_amount,
+                              db=db)
+    
     db.commit()
     db.refresh(new_goal)
 
     # IMPORTANT: enqueue only AFTER commit
     if goaltype.verification_type == "quiz":
         generate_quiz_for_goal.delay(str(new_goal.id))
+    deadline_utc = new_goal.deadline
+    if deadline_utc.tzinfo is None:
+        deadline_utc = deadline_utc.replace(tzinfo=timezone.utc)
+    finalize_goal_at_deadline.apply_async(args=[str(new_goal.id)], eta=deadline_utc)
 
     return new_goal
 
@@ -64,6 +76,7 @@ def get_goal_types(user_id: UUID = Depends(validate_access_token), db: Session =
 
 @router.get("/getcurrentgoals", response_model=list[goal_models.currentGoalResponse])
 def get_current_goals(user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
+    logging.info("start")
     all_goals = current_goals_for_user(user_id, db)
     logging.info("Getting all goals for: " + str(user_id))
     return [goal_models.currentGoalResponse.model_validate(r._mapping) for r in all_goals]

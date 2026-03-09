@@ -7,7 +7,7 @@ from src.helpers.db import SessionLocal, get_db
 from src.models import goal_schemas
 import logging
 
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 router = APIRouter(prefix="/api/v1/openai", tags=["gpt"])
 

@@ -3,10 +3,10 @@ import boto3
 from botocore.config import Config
 from ..config import settings
 
-AWS_REGION = settings.AWS_REGION
-S3_BUCKET = settings.S3_BUCKET
-AWS_ACCESS_KEY = settings.AWS_ACCESS_KEY
-AWS_SECRET_KEY = settings.AWS_SECRET_KEY
+AWS_REGION = settings.aws_region
+S3_BUCKET = settings.s3_bucket
+AWS_ACCESS_KEY = settings.aws_access_key
+AWS_SECRET_KEY = settings.aws_secret_key
 
 s3 = boto3.client(
     "s3",

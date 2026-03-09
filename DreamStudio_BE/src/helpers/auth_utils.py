@@ -18,12 +18,12 @@ def create_token(data: dict, expires_delta: timedelta) -> str:
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
 
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 def create_access_token(user_id: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     data = {"sub": user_id, "type": "access", "exp": expire}
-    return jwt.encode(data, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(data, settings.secret_key, algorithm=settings.algorithm)
     
 def generate_refresh_token():
     refresh_token_raw = secrets.token_urlsafe(64)
@@ -38,7 +38,7 @@ def create_refresh_token(db: Session, user_id: str) -> str:
     db_refresh_token = RefreshToken(
         user_id=user_id,
         refresh_token=hashed_refresh_token,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     )
     db.add(db_refresh_token)
     db.commit()
@@ -48,7 +48,7 @@ def create_refresh_token(db: Session, user_id: str) -> str:
 def validate_access_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token,
-                             settings.SECRET_KEY,
+                             settings.secret_key,
                              algorithms=["HS256"]
         )  #jose.jwt will check if it is expired. verify_exp: False will not automatically check
         user_id = UUID(payload.get("sub"))

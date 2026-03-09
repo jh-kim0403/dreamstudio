@@ -7,7 +7,7 @@ from src.helpers.db import SessionLocal
 from src.helpers.s3 import presign_get
 from src.models import verifications_schemas, goal_schemas
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = OpenAI(api_key=settings.openai_api_key)
 
 @celery_app.task(bind=True, max_retries=0, default_retry_delay=20)
 def evaluate_submission(self, submission_id: str):
@@ -79,11 +79,11 @@ def evaluate_photo_verification(self, verification_id: str):
         if is_true:
             verification.result = "approved"
             goal.verification_status = "completed"
-            goal.status = "finalized"
+            goal.status = "validating"
         else:
             verification.result = "rejected"
             goal.verification_status = "failed"
-            goal.status = "submitted"
+            goal.status = "pending"
 
         
         meta = dict(photo.meta or {})

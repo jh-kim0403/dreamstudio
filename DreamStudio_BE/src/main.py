@@ -10,10 +10,18 @@ Celery - Django (Async)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routes import auth_manual, auth_google, goals, auth_refresh, verifications, payments
+from src.routes import auth_manual, auth_google, goals, auth_refresh, verifications, payments, user, admin_maintenance_costs
 from src.gpt import apicalls# no leading dot
+from src.config import settings
+import logging
+logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="DreamStudio Auth API")
+
+
+app = FastAPI(
+    title=settings.app_name,
+    debug=settings.debug
+)
 
 # Enable CORS for mobile app development
 app.add_middleware(
@@ -31,3 +39,5 @@ app.include_router(auth_refresh.router)
 app.include_router(apicalls.router)
 app.include_router(verifications.router)
 app.include_router(payments.router)
+app.include_router(user.router)
+app.include_router(admin_maintenance_costs.router)

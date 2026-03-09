@@ -5,6 +5,7 @@ import VerificationScreen from "./VerificationScreen";
 import AddNewGoalScreen from "./AddNewGoalScreen";
 import PurchaseBountyAndWithdrawlScreen from "./PurchaseBountyAndWithdrawlScreen";
 import PastGoalsScreen from "./PastGoalsScreen";
+import ProfileScreen from "./ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,11 @@ export default function AuthenticatedScreens() {
         name="PastGoals"
         component={PastGoalsScreen}
         options={{ title: "Past Goals" }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: "Profile" }}
       />
     </Stack.Navigator>
   );
