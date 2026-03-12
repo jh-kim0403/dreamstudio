@@ -65,7 +65,6 @@ def signup_manual(payload: auth_models.SignupManual, request: Request, db: Sessi
     db.add(identity)
     db.commit()
     db.refresh(user)
-    print("what is going on")
     return user
     
 

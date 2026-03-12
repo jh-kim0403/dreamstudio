@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS citext;    -- case-insensitive email
+
 CREATE TABLE IF NOT EXISTS users (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email            CITEXT NOT NULL UNIQUE,
@@ -104,12 +107,35 @@ CREATE TABLE IF NOT EXISTS goal_quiz_questions (
 CREATE TABLE IF NOT EXISTS goal_quiz_user_input (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   verification_id   UUID NOT NULL REFERENCES verifications(id) ON DELETE CASCADE,
-  question_id       UUID NOT NULL REFERENCES verification_quiz_questions(id),
+  question_id       UUID NOT NULL REFERENCES goal_quiz_questions(id),
   
   user_answer       TEXT NOT NULL,
   is_correct        BOOLEAN,
   
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE payments (
+  id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  goal_id                  UUID REFERENCES goals(id) ON DELETE SET NULL,
+
+  amount                   INTEGER NOT NULL CHECK (amount > 0), -- cents
+  currency                 TEXT NOT NULL DEFAULT 'usd',
+
+  reason                   TEXT NOT NULL CHECK (
+                           reason IN ('goal_failed', 'manual_charge', 'refund')
+                         ),
+
+  status                   TEXT NOT NULL DEFAULT 'pending'
+                           CHECK (status IN ('pending','succeeded','failed','canceled','requires_action')),
+
+  stripe_payment_intent_id TEXT,
+  stripe_setup_intent_id   TEXT,
+  stripe_charge_id         TEXT,
+
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS bounty_ledger (
@@ -186,5 +212,20 @@ CREATE TABLE IF NOT EXISTS weekly_pool_distribution_items (
 
 CREATE INDEX IF NOT EXISTS idx_weekly_pool_distribution_items_user_id
   ON weekly_pool_distribution_items(user_id);
+
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    user_id UUID NOT NULL
+        REFERENCES users(id) ON DELETE CASCADE,
+
+    refresh_token TEXT NOT NULL UNIQUE,
+
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 COMMIT;
