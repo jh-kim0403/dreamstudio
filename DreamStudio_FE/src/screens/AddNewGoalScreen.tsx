@@ -11,8 +11,7 @@ import {
 import AuthContext from "../context/AuthContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
-
-const API_BASE_URL = "http://10.0.2.2:8000/api/v1";
+import { API_BASE_URL } from "../config/api";
 
 type GoalType = {
   id: string;

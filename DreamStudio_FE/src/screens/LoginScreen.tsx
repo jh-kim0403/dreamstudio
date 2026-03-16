@@ -3,8 +3,9 @@ import React, { useContext, useState } from 'react';
 import { View, Text } from 'react-native';
 import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
 import AuthContext from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
+import { useNavigation } from "@react-navigation/native";
 
-const API_BASE_URL = 'http://10.0.2.2:8000/api/v1';
 type LoginResponse = {
     user_id: string;
     email: string;
@@ -20,6 +21,7 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
     const [isInProgress, setIsInProgress] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const navigation = useNavigation();
 
     const isSuccessResponse = (response: any): response is { data: any } => {
         return response && response.data;
@@ -137,11 +139,15 @@ const LoginScreen = () => {
             <Button title="Login" onPress={handleLogin} disabled={isInProgress} />
 
             {errorMessage ? <Text>{errorMessage}</Text> : null}
+            
 
-            <GoogleSigninButton
-                size={GoogleSigninButton.Size.Wide}
-                color={GoogleSigninButton.Color.Dark}
-                onPress={googleSignIn}
+            
+            <Button
+                title="Sign Up"
+                onPress={() => {
+                    // @ts-expect-error: app-wide nav types not yet defined
+                    navigation.navigate('SignUp');
+                }}
                 disabled={isInProgress}
             />
         </View>
@@ -150,3 +156,11 @@ const LoginScreen = () => {
 }
 
 export default LoginScreen;
+/*
+<GoogleSigninButton
+size={GoogleSigninButton.Size.Wide}
+color={GoogleSigninButton.Color.Dark}
+onPress={googleSignIn}
+disabled={isInProgress}
+/>
+*/

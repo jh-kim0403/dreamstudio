@@ -10,8 +10,7 @@ import {
 import { useStripe } from "@stripe/stripe-react-native";
 import AuthContext from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-
-const API_BASE_URL = "http://10.0.2.2:8000/api/v1";
+import { API_BASE_URL } from "../config/api";
 const MIN_BANK = 5;
 const MIN_CARD = 10;
 

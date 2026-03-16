@@ -11,8 +11,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { launchCamera } from "react-native-image-picker";
 import RNBlobUtil from "react-native-blob-util";
 import AuthContext from "../context/AuthContext";
-
-const API_BASE_URL = "http://10.0.2.2:8000/api/v1";
+import { API_BASE_URL } from "../config/api";
 
 type QuizQuestion = {
   quiz_id: string;

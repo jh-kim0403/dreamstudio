@@ -1,8 +1,7 @@
 import React, { ReactNode, useMemo, useState, useCallback, useRef } from 'react';
 import * as Keychain from 'react-native-keychain';
 import AuthContext, { LoginPayload } from '../context/AuthContext.tsx';
-
-const API_BASE_URL = "http://10.0.2.2:8000/api/v1";
+import { API_BASE_URL } from '../config/api';
 
 interface AuthContextProviderProps {
   children: ReactNode;

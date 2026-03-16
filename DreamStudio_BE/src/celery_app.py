@@ -1,10 +1,8 @@
 import os
-from dotenv import load_dotenv
 from celery import Celery
 from celery.schedules import crontab
 from src.config import settings
 
-load_dotenv("dreamstudio.env")  # or ".env" if you standardize
 
 redis_URL = settings.celery_redis_url
 

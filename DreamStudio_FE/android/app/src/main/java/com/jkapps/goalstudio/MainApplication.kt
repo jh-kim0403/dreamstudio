@@ -1,4 +1,4 @@
-package com.dreamstudio_fe
+package com.jkapps.goalstudio
 
 import android.app.Application
 import com.facebook.react.PackageList

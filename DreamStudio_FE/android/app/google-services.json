@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "132536870621",
+    "project_id": "goal-studio-db383",
+    "storage_bucket": "goal-studio-db383.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:132536870621:android:42e9e6a9f3838b6cdd9d34",
+        "android_client_info": {
+          "package_name": "com.jkapps.goalstudio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhPsLMFdGyw25Wt_miofQ48kMnR2-idLc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,9 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+apply plugin: "com.google.gms.google-services"
+
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -77,13 +80,14 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.dreamstudio_fe"
+    namespace "com.jkapps.goalstudio"
     defaultConfig {
-        applicationId "com.dreamstudio_fe"
+        applicationId "com.jkapps.goalstudio"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [usesCleartextTraffic: "true"]
     }
     signingConfigs {
         debug {
@@ -109,6 +113,9 @@ android {
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
+    implementation platform("com.google.firebase:firebase-bom:34.10.0")
+    implementation "com.google.firebase:firebase-analytics"
+
     implementation("com.facebook.react:react-android")
 
     if (hermesEnabled.toBoolean()) {

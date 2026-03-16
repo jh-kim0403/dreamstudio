@@ -3,10 +3,19 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "android": "ENVFILE=.env.dev react-native run-android",
+    "android:dev": "ENVFILE=.env.dev react-native run-android",
+    "android:test": "ENVFILE=.env.test react-native run-android",
+    "android:prod": "ENVFILE=.env.prod react-native run-android",
+    "ios": "ENVFILE=.env.dev react-native run-ios",
+    "ios:dev": "ENVFILE=.env.dev react-native run-ios",
+    "ios:test": "ENVFILE=.env.test react-native run-ios",
+    "ios:prod": "ENVFILE=.env.prod react-native run-ios",
     "lint": "eslint .",
-    "start": "react-native start",
+    "start": "ENVFILE=.env.dev react-native start",
+    "start:dev": "ENVFILE=.env.dev react-native start",
+    "start:test": "ENVFILE=.env.test react-native start",
+    "start:prod": "ENVFILE=.env.prod react-native start",
     "test": "jest"
   },
   "dependencies": {
@@ -25,7 +34,8 @@
     "react-native-keychain": "^10.0.0",
     "react-native-safe-area-context": "^5.6.2",
     "react-native-screens": "^4.20.0",
-    "react-native-vector-icons": "^10.3.0"
+    "react-native-vector-icons": "^10.3.0",
+    "react-native-config": "^1.5.9"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -76,7 +76,5 @@ def get_goal_types(user_id: UUID = Depends(validate_access_token), db: Session =
 
 @router.get("/getcurrentgoals", response_model=list[goal_models.currentGoalResponse])
 def get_current_goals(user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
-    logging.info("start")
     all_goals = current_goals_for_user(user_id, db)
-    logging.info("Getting all goals for: " + str(user_id))
     return [goal_models.currentGoalResponse.model_validate(r._mapping) for r in all_goals]

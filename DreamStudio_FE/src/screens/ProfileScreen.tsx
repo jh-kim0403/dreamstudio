@@ -1,8 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AuthContext from "../context/AuthContext";
-
-const API_BASE_URL = "http://10.0.2.2:8000/api/v1";
+import { API_BASE_URL } from "../config/api";
 
 type UserProfile = {
   first_name: string;

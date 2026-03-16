@@ -1,4 +1,4 @@
-package com.dreamstudio_fe
+package com.jkapps.goalstudio
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

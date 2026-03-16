@@ -3,8 +3,7 @@ import React, { useContext, useState } from 'react';
 import { View, Text } from 'react-native';
 import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
 import AuthContext from '../context/AuthContext';
-
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from '../config/api';
 type LoginResponse = {
     user_id: string;
     email: string;
@@ -152,12 +151,6 @@ export default function SignUpScreen(){
 
             {errorMessage ? <Text>{errorMessage}</Text> : null}
 
-            <GoogleSigninButton
-                size={GoogleSigninButton.Size.Wide}
-                color={GoogleSigninButton.Color.Dark}
-                onPress={googleSignUp}
-                disabled={isInProgress}
-            />
         </View>
     );
 }
