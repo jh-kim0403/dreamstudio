@@ -5,6 +5,7 @@ import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-goo
 import AuthContext from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
 import { useNavigation } from "@react-navigation/native";
+import { styles } from "../styles/LoginScreen.styles";
 
 type LoginResponse = {
     user_id: string;
@@ -106,7 +107,7 @@ const LoginScreen = () => {
     };
 
     return (
-        <View>
+        <View style={styles.container}>
 
             <Input
                 inputMode="email"
@@ -138,18 +139,19 @@ const LoginScreen = () => {
             />
             <Button title="Login" onPress={handleLogin} disabled={isInProgress} />
 
-            {errorMessage ? <Text>{errorMessage}</Text> : null}
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             
 
-            
-            <Button
-                title="Sign Up"
-                onPress={() => {
-                    // @ts-expect-error: app-wide nav types not yet defined
-                    navigation.navigate('SignUp');
-                }}
-                disabled={isInProgress}
-            />
+            <View style={styles.signUpButtonContainer}>
+                <Button
+                    title="Sign Up"
+                    onPress={() => {
+                        // @ts-expect-error: app-wide nav types not yet defined
+                        navigation.navigate('SignUp');
+                    }}
+                    disabled={isInProgress}
+                />
+            </View>
         </View>
 
     );

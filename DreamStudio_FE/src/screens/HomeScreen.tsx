@@ -9,6 +9,7 @@ import {
 import AuthContext from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
+import { styles } from "../styles/HomeScreen.styles";
 
 type Goal = {
   id?: string | number;
@@ -52,6 +53,24 @@ const formatGoalDate = (goal: Goal): string | null => {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(parsed));
+};
+
+const shouldShowVerifyButton = (goal: Goal): boolean => {
+  const isQuizReady =
+    goal.verification_type === "quiz" &&
+    goal.quiz_question_status === "created" &&
+    goal.verification_result !== "approved";
+
+  const isFreshPhotoGoal =
+    goal.verification_type == null &&
+    goal.quiz_question_status === "none" &&
+    goal.verification_status === "not started";
+
+  const isExistingPhotoGoal =
+    goal.verification_type === "photo" &&
+    goal.verification_result !== "approved";
+
+  return isQuizReady || isFreshPhotoGoal || isExistingPhotoGoal;
 };
 
 export default function HomeScreen() {
@@ -106,42 +125,32 @@ export default function HomeScreen() {
 
   if (!token) {
     return (
-      <View style={{ padding: 20 }}>
+      <View style={styles.missingTokenContainer}>
         <Text>Missing access token. Please log in again.</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#e0e0e0",
-          borderRadius: 10,
-          padding: 12,
-          marginBottom: 16,
-        }}
-      >
+    <View style={styles.container}>
+      <View style={styles.navCard}>
         <TouchableOpacity
           onPress={() => setIsNavCollapsed((prev) => !prev)}
-          style={{ flexDirection: "row", justifyContent: "space-between" }}
+          style={styles.navToggle}
         >
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>Navigation</Text>
-          <Text style={{ fontSize: 16 }}>
-            {isNavCollapsed ? "Show" : "Hide"}
-          </Text>
+          <Text style={styles.navTitle}>Navigation</Text>
+          <Text style={styles.navToggleLabel}>{isNavCollapsed ? "Show" : "Hide"}</Text>
         </TouchableOpacity>
         {!isNavCollapsed ? (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: "#555", marginBottom: 6 }}>Home</Text>
+          <View style={styles.navLinks}>
+            <Text style={styles.navLinkText}>Home</Text>
             <TouchableOpacity
               onPress={() => {
                 // @ts-expect-error: app-wide nav types not yet defined
                 navigation.navigate("PastGoals");
               }}
             >
-              <Text style={{ color: "#555", marginBottom: 6 }}>Past Goals</Text>
+              <Text style={styles.navLinkText}>Past Goals</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -149,9 +158,7 @@ export default function HomeScreen() {
                 navigation.navigate("PurchaseBountyAndWithdrawl");
               }}
             >
-              <Text style={{ color: "#555", marginBottom: 6 }}>
-                Purchase Bounty & Withdrawl
-              </Text>
+              <Text style={styles.navLinkText}>Purchase Bounty & Withdrawl</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -159,76 +166,40 @@ export default function HomeScreen() {
                 navigation.navigate("Profile");
               }}
             >
-              <Text style={{ color: "#555", marginBottom: 6 }}>Profile</Text>
+              <Text style={styles.navLinkText}>Profile</Text>
             </TouchableOpacity>
           </View>
         ) : null}
       </View>
 
       <TouchableOpacity
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 12,
-          borderRadius: 8,
-          marginBottom: 16,
-          alignItems: "center",
-        }}
+        style={styles.addGoalButton}
         onPress={() => {
           // @ts-expect-error: app-wide nav types not yet defined
           navigation.navigate("AddNewGoal");
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
-          Add new goal
-        </Text>
+        <Text style={styles.primaryButtonText}>Add new goal</Text>
       </TouchableOpacity>
 
-      <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 12 }}>
-        Current Goals
-      </Text>
+      <Text style={styles.heading}>Current Goals</Text>
       {isLoading ? <ActivityIndicator size="large" /> : null}
-      {errorMessage ? <Text style={{ color: "red" }}>{errorMessage}</Text> : null}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
       <FlatList
         data={sortedGoals}
         keyExtractor={(item, index) => String(item.id ?? index)}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <View
-            style={{
-              paddingVertical: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: "#e0e0e0",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                {item.title || item.name || "Untitled Goal"}
-              </Text>
+          <View style={styles.goalItem}>
+            <View style={styles.goalHeader}>
+              <Text style={styles.goalTitle}>{item.title || item.name || "Untitled Goal"}</Text>
               {item.verification_type === "quiz" &&
               (item.quiz_question_status === "pending" ||
                 item.quiz_question_status === "none") ? (
-                <Text style={{ color: "#666", fontWeight: "600" }}>
-                  Quiz being created
-                </Text>
-              ) : (item.quiz_question_status === "created" &&
-                  (item.verification_result === "rejected" ||
-                    item.verification_result == null)) ||
-                (item.verification_type === "photo" &&
-                  item.verification_result !== "approved") ? (
+                <Text style={styles.pendingQuizText}>Quiz being created</Text>
+              ) : shouldShowVerifyButton(item) ? (
                 <TouchableOpacity
-                  style={{
-                    backgroundColor: "#0f62fe",
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
-                    marginLeft: 8,
-                  }}
+                  style={styles.verifyButton}
                   onPress={() => {
                     // @ts-expect-error: app-wide nav types not yet defined
                     navigation.navigate("Verification", {
@@ -238,30 +209,20 @@ export default function HomeScreen() {
                     });
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>
-                    Verify
-                  </Text>
+                  <Text style={styles.primaryButtonText}>Verify</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
             {item.verification_result === "approved" ? (
-              <Text style={{ color: "#0a7f45", fontWeight: "600", marginTop: 4 }}>
-                Completed
-              </Text>
+              <Text style={styles.approvedText}>Completed</Text>
             ) : item.verification_result === "rejected" ? (
-              <Text style={{ color: "#b00020", fontWeight: "600", marginTop: 4 }}>
-                Failed - last submission
-              </Text>
+              <Text style={styles.rejectedText}>Failed - last submission</Text>
             ) : null}
             {item.description ? (
-              <Text style={{ color: "#555", marginTop: 4 }}>
-                {item.description}
-              </Text>
+              <Text style={styles.descriptionText}>{item.description}</Text>
             ) : null}
             {(item.deadline || item.created_at || item.updated_at) ? (
-              <Text style={{ color: "#888", marginTop: 4 }}>
-                {formatGoalDate(item)}
-              </Text>
+              <Text style={styles.dateText}>{formatGoalDate(item)}</Text>
             ) : null}
           </View>
         )}

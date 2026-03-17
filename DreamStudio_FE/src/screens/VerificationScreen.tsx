@@ -12,6 +12,7 @@ import { launchCamera } from "react-native-image-picker";
 import RNBlobUtil from "react-native-blob-util";
 import AuthContext from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
+import { styles } from "../styles/VerificationScreen.styles";
 
 type QuizQuestion = {
   quiz_id: string;
@@ -341,21 +342,17 @@ export default function VerificationScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 8 }}>
-        Verification
-      </Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Text style={styles.heading}>Verification</Text>
       {!goalId ? <Text>Missing goal id.</Text> : null}
-      {isLoading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+      {isLoading ? <ActivityIndicator style={styles.topSpacer} /> : null}
       {errorMessage ? (
-        <Text style={{ color: "red", marginTop: 12 }}>{errorMessage}</Text>
+        <Text style={[styles.errorText, styles.topSpacer]}>{errorMessage}</Text>
       ) : null}
 
       {canShowQuiz ? (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Quiz Questions
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quiz Questions</Text>
           {quizQuestions.length === 0 ? (
             <Text>No quiz questions available yet.</Text>
           ) : (
@@ -364,27 +361,18 @@ export default function VerificationScreen() {
                 const key = question.quiz_id || String(index);
                 const selected = quizAnswers[key] ?? null;
                 return (
-              <View
-                key={key}
-                style={{
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#eee",
-                }}
-              >
-                <Text style={{ fontWeight: "600" }}>
-                  Q{index + 1}
-                </Text>
+              <View key={key} style={styles.questionCard}>
+                <Text style={styles.questionLabel}>Q{index + 1}</Text>
                 <Text>{question.question}</Text>
-                <View style={{ flexDirection: "row", marginTop: 8 }}>
+                <View style={styles.answerRow}>
                   <TouchableOpacity
-                    style={{
-                      backgroundColor: selected === true ? "#0f62fe" : "#e0e0e0",
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 6,
-                      marginRight: 8,
-                    }}
+                    style={[
+                      styles.answerButton,
+                      styles.answerButtonSpacing,
+                      selected === true
+                        ? styles.answerButtonActive
+                        : styles.answerButtonInactive,
+                    ]}
                     onPress={() =>
                       setQuizAnswers((prev) => {
                         setSubmitError(null);
@@ -397,21 +385,23 @@ export default function VerificationScreen() {
                     }
                   >
                     <Text
-                      style={{
-                        color: selected === true ? "#fff" : "#111",
-                        fontWeight: "600",
-                      }}
+                      style={[
+                        styles.answerText,
+                        selected === true
+                          ? styles.answerTextActive
+                          : styles.answerTextInactive,
+                      ]}
                     >
                       True
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{
-                      backgroundColor: selected === false ? "#0f62fe" : "#e0e0e0",
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 6,
-                    }}
+                    style={[
+                      styles.answerButton,
+                      selected === false
+                        ? styles.answerButtonActive
+                        : styles.answerButtonInactive,
+                    ]}
                     onPress={() =>
                       setQuizAnswers((prev) => {
                         setSubmitError(null);
@@ -424,10 +414,12 @@ export default function VerificationScreen() {
                     }
                   >
                     <Text
-                      style={{
-                        color: selected === false ? "#fff" : "#111",
-                        fontWeight: "600",
-                      }}
+                      style={[
+                        styles.answerText,
+                        selected === false
+                          ? styles.answerTextActive
+                          : styles.answerTextInactive,
+                      ]}
                     >
                       False
                     </Text>
@@ -439,58 +431,46 @@ export default function VerificationScreen() {
             ))
           )}
           {submitError ? (
-            <Text style={{ color: "red", marginTop: 8 }}>
-              {submitError}
-            </Text>
+            <Text style={styles.submitError}>{submitError}</Text>
           ) : null}
           {quizQuestions.length > 0 ? (
             <TouchableOpacity
-              style={{
-                backgroundColor: isSubmitting ? "#555" : "#111",
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: "center",
-                marginTop: 12,
-              }}
+              style={[
+                styles.actionButton,
+                styles.actionButtonTopSpacing,
+                isSubmitting
+                  ? styles.actionButtonDisabled
+                  : styles.actionButtonActive,
+              ]}
               onPress={handleQuizSubmit}
               disabled={isSubmitting}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                {isSubmitting ? "Submitting..." : "Submit answers"}
-              </Text>
+              <Text style={styles.actionButtonText}>{isSubmitting ? "Submitting..." : "Submit answers"}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
       ) : null}
 
       {canShowPhoto ? (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Photo Verification
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Photo Verification</Text>
           {verificationId ? null : (
-            <Text style={{ color: "#666", marginBottom: 8 }}>
-              Waiting for verification id from backend.
-            </Text>
+            <Text style={styles.mutedText}>Waiting for verification id from backend.</Text>
           )}
           {uploadError ? (
-            <Text style={{ color: "red", marginBottom: 8 }}>
-              {uploadError}
-            </Text>
+            <Text style={styles.uploadError}>{uploadError}</Text>
           ) : null}
           <TouchableOpacity
-            style={{
-              backgroundColor: isUploading ? "#555" : "#111",
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: "center",
-            }}
+            style={[
+              styles.actionButton,
+              isUploading
+                ? styles.actionButtonDisabled
+                : styles.actionButtonActive,
+            ]}
             onPress={handlePhotoUpload}
             disabled={isUploading}
           >
-            <Text style={{ color: "#fff", fontWeight: "600" }}>
-              {isUploading ? "Uploading..." : "Take photo & upload"}
-            </Text>
+            <Text style={styles.actionButtonText}>{isUploading ? "Uploading..." : "Take photo & upload"}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -501,51 +481,27 @@ export default function VerificationScreen() {
         animationType="fade"
         onRequestClose={() => setShowUploadModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              padding: 20,
-              width: "100%",
-              maxWidth: 320,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
               {uploadResult === "success"
                 ? "Photo Submitted"
                 : "Photo Upload Failed"}
             </Text>
-            <Text style={{ color: "#555", textAlign: "center", marginBottom: 16 }}>
+            <Text style={styles.modalBody}>
               {uploadResult === "success"
                 ? "Your photo was sent successfully."
                 : uploadResult || "Photo upload failed."}
             </Text>
             <TouchableOpacity
-              style={{
-                backgroundColor: "#111",
-                paddingVertical: 10,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-              }}
+              style={styles.modalButton}
               onPress={() => {
                 setShowUploadModal(false);
                 // @ts-expect-error: app-wide nav types not yet defined
                 navigation.navigate("Home");
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Back to Home
-              </Text>
+              <Text style={styles.actionButtonText}>Back to Home</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -556,45 +512,19 @@ export default function VerificationScreen() {
       animationType="fade"
       onRequestClose={() => setShowSubmitModal(false)}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            padding: 20,
-            width: "100%",
-            maxWidth: 320,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Quiz Submitted
-          </Text>
-          <Text style={{ color: "#555", textAlign: "center", marginBottom: 16 }}>
-            Your answers were sent successfully.
-          </Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>Quiz Submitted</Text>
+          <Text style={styles.modalBody}>Your answers were sent successfully.</Text>
           <TouchableOpacity
-            style={{
-              backgroundColor: "#111",
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-            }}
+            style={styles.modalButton}
             onPress={() => {
               setShowSubmitModal(false);
               // @ts-expect-error: app-wide nav types not yet defined
               navigation.navigate("Home");
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "600" }}>Back to Home</Text>
+            <Text style={styles.actionButtonText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       </View>

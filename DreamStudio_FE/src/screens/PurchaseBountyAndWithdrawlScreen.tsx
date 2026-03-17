@@ -11,6 +11,7 @@ import { useStripe } from "@stripe/stripe-react-native";
 import AuthContext from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
+import { styles } from "../styles/PurchaseBountyAndWithdrawlScreen.styles";
 const MIN_BANK = 5;
 const MIN_CARD = 10;
 
@@ -93,83 +94,76 @@ export default function PurchaseBountyAndWithdrawlScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 8 }}>
-        Purchase Bounty
-      </Text>
-      <Text style={{ color: "#555" }}>
-        Add payment methods and fund bounties here.
-      </Text>
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ fontWeight: "600", marginBottom: 8 }}>
-          Payment method
-        </Text>
-        <View style={{ flexDirection: "row" }}>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Purchase Bounty</Text>
+      <Text style={styles.subtitle}>Add payment methods and fund bounties here.</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Payment method</Text>
+        <View style={styles.methodRow}>
           <TouchableOpacity
-            style={{
-              backgroundColor: method === "bank" ? "#111" : "#e0e0e0",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 6,
-              marginRight: 10,
-            }}
+            style={[
+              styles.methodButton,
+              styles.methodButtonSpacing,
+              method === "bank"
+                ? styles.methodButtonActive
+                : styles.methodButtonInactive,
+            ]}
             onPress={() => setMethod("bank")}
           >
-            <Text style={{ color: method === "bank" ? "#fff" : "#111" }}>
+            <Text
+              style={
+                method === "bank"
+                  ? styles.methodTextActive
+                  : styles.methodTextInactive
+              }
+            >
               Bank ($5 min)
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{
-              backgroundColor: method === "card" ? "#111" : "#e0e0e0",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 6,
-            }}
+            style={[
+              styles.methodButton,
+              method === "card"
+                ? styles.methodButtonActive
+                : styles.methodButtonInactive,
+            ]}
             onPress={() => setMethod("card")}
           >
-            <Text style={{ color: method === "card" ? "#fff" : "#111" }}>
+            <Text
+              style={
+                method === "card"
+                  ? styles.methodTextActive
+                  : styles.methodTextInactive
+              }
+            >
               Debit ($10 min)
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-      <View style={{ marginTop: 16 }}>
-        <Text style={{ fontWeight: "600", marginBottom: 8 }}>Amount</Text>
+      <View style={styles.amountSection}>
+        <Text style={styles.sectionLabel}>Amount</Text>
         <TextInput
           value={amount}
           onChangeText={setAmount}
           placeholder={`Minimum $${minAmount}`}
           keyboardType="decimal-pad"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 8,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-          }}
+          style={styles.amountInput}
         />
       </View>
-      {message ? (
-        <Text style={{ color: "#b00020", marginTop: 12 }}>{message}</Text>
-      ) : null}
+      {message ? <Text style={styles.messageText}>{message}</Text> : null}
       <TouchableOpacity
-        style={{
-          backgroundColor: isLoading ? "#555" : "#111",
-          paddingVertical: 12,
-          borderRadius: 8,
-          alignItems: "center",
-          marginTop: 16,
-        }}
+        style={[
+          styles.submitButton,
+          isLoading ? styles.submitButtonDisabled : styles.submitButtonActive,
+        ]}
         onPress={handlePurchase}
         disabled={isLoading}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            Purchase Bounty
-          </Text>
+          <Text style={styles.primaryButtonText}>Purchase Bounty</Text>
         )}
       </TouchableOpacity>
       <Modal
@@ -178,47 +172,19 @@ export default function PurchaseBountyAndWithdrawlScreen() {
         animationType="fade"
         onRequestClose={() => setShowSuccessModal(false)}
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              padding: 20,
-              width: "100%",
-              maxWidth: 320,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-              Payment Success
-            </Text>
-            <Text style={{ color: "#555", textAlign: "center", marginBottom: 16 }}>
-              Your payment was submitted successfully.
-            </Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Payment Success</Text>
+            <Text style={styles.modalBody}>Your payment was submitted successfully.</Text>
             <TouchableOpacity
-              style={{
-                backgroundColor: "#111",
-                paddingVertical: 10,
-                paddingHorizontal: 16,
-                borderRadius: 8,
-              }}
+              style={styles.modalButton}
               onPress={() => {
                 setShowSuccessModal(false);
                 // @ts-expect-error: app-wide nav types not yet defined
                 navigation.navigate("Home");
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Back to Home
-              </Text>
+              <Text style={styles.primaryButtonText}>Back to Home</Text>
             </TouchableOpacity>
           </View>
         </View>

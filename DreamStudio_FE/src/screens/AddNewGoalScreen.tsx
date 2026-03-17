@@ -12,6 +12,7 @@ import AuthContext from "../context/AuthContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
+import { styles } from "../styles/AddNewGoalScreen.styles";
 
 type GoalType = {
   id: string;
@@ -304,41 +305,26 @@ export default function AddNewGoalScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>
-        Add New Goal
-      </Text>
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Text style={styles.heading}>Add New Goal</Text>
 
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: "#e0e0e0",
-          borderRadius: 8,
-          marginBottom: 16,
-        }}
-      >
+      <View style={styles.selectorCard}>
         <TouchableOpacity
           onPress={() => setIsGoalTypeOpen((prev) => !prev)}
-          style={{
-            padding: 12,
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
+          style={styles.selectorToggle}
         >
-          <Text style={{ fontWeight: "600" }}>
-            {selectedGoalType?.name || "Select goal type"}
-          </Text>
+          <Text style={styles.selectorLabel}>{selectedGoalType?.name || "Select goal type"}</Text>
           <Text>{isGoalTypeOpen ? "Hide" : "Show"}</Text>
         </TouchableOpacity>
         {isGoalTypeOpen ? (
-          <View style={{ borderTopWidth: 1, borderTopColor: "#eee" }}>
+          <View style={styles.selectorList}>
             {isGoalTypesLoading ? (
-              <View style={{ padding: 12 }}>
+              <View style={styles.loadingRow}>
                 <ActivityIndicator />
               </View>
             ) : null}
             {goalTypeError ? (
-              <Text style={{ color: "red", padding: 12 }}>{goalTypeError}</Text>
+              <Text style={[styles.errorText, styles.selectorError]}>{goalTypeError}</Text>
             ) : null}
             {goalTypes.map((type) => (
               <TouchableOpacity
@@ -347,13 +333,11 @@ export default function AddNewGoalScreen() {
                   setSelectedGoalType(type);
                   setIsGoalTypeOpen(false);
                 }}
-                style={{ padding: 12 }}
+                style={styles.selectorItem}
               >
-                <Text style={{ fontWeight: "500" }}>{type.name}</Text>
+                <Text style={styles.selectorItemTitle}>{type.name}</Text>
                 {type.description ? (
-                  <Text style={{ color: "#666", marginTop: 4 }}>
-                    {type.description}
-                  </Text>
+                  <Text style={styles.selectorItemDescription}>{type.description}</Text>
                 ) : null}
               </TouchableOpacity>
             ))}
@@ -362,34 +346,19 @@ export default function AddNewGoalScreen() {
       </View>
 
       {isBibleGoal ? (
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-            Read the Bible
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Read the Bible</Text>
 
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: "#e0e0e0",
-              borderRadius: 8,
-              marginBottom: 12,
-            }}
-          >
+          <View style={styles.selectorCard}>
             <TouchableOpacity
               onPress={() => setIsBibleBookOpen((prev) => !prev)}
-              style={{
-                padding: 12,
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
+              style={styles.selectorToggle}
             >
-              <Text style={{ fontWeight: "600" }}>
-                {selectedBibleBook?.name || "Select bible book"}
-              </Text>
+              <Text style={styles.selectorLabel}>{selectedBibleBook?.name || "Select bible book"}</Text>
               <Text>{isBibleBookOpen ? "Hide" : "Show"}</Text>
             </TouchableOpacity>
             {isBibleBookOpen ? (
-              <View style={{ borderTopWidth: 1, borderTopColor: "#eee" }}>
+              <View style={styles.selectorList}>
                 {BIBLE_BOOKS.map((book) => (
                   <TouchableOpacity
                     key={book.name}
@@ -397,9 +366,9 @@ export default function AddNewGoalScreen() {
                       setSelectedBibleBook(book);
                       setIsBibleBookOpen(false);
                     }}
-                    style={{ padding: 12 }}
+                    style={styles.selectorItem}
                   >
-                    <Text style={{ fontWeight: "500" }}>
+                    <Text style={styles.selectorItemTitle}>
                       {book.name} ({book.chapters} chapters)
                     </Text>
                   </TouchableOpacity>
@@ -408,63 +377,40 @@ export default function AddNewGoalScreen() {
             ) : null}
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 12,
-              marginBottom: 12,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={{ marginBottom: 6 }}>From</Text>
+          <View style={styles.chapterRow}>
+            <View style={styles.chapterField}>
+              <Text style={styles.inputLabel}>From</Text>
               <TextInput
                 value={fromChapter}
                 onChangeText={handleFromChange}
                 keyboardType="number-pad"
                 placeholder="1"
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  borderRadius: 6,
-                  padding: 10,
-                }}
+                style={styles.input}
               />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ marginBottom: 6 }}>To</Text>
+            <View style={styles.chapterField}>
+              <Text style={styles.inputLabel}>To</Text>
               <TextInput
                 value={toChapter}
                 onChangeText={handleToChange}
                 keyboardType="number-pad"
                 placeholder="1"
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  borderRadius: 6,
-                  padding: 10,
-                }}
+                style={styles.input}
               />
             </View>
           </View>
 
           {selectedBibleBook ? (
-            <Text style={{ color: "#666", marginBottom: 12 }}>
-              Chapters range: 1 to {selectedBibleBook.chapters}
-            </Text>
+            <Text style={styles.helperText}>Chapters range: 1 to {selectedBibleBook.chapters}</Text>
           ) : null}
         </View>
       ) : null}
 
-      <View style={{ marginBottom: 16 }}>
-        <Text style={{ marginBottom: 6 }}>Deadline (local time)</Text>
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>Deadline (local time)</Text>
         <TouchableOpacity
           onPress={() => setShowDeadlinePicker(true)}
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 6,
-            padding: 10,
-          }}
+          style={styles.input}
         >
           <Text>
             {deadline ? deadline.toLocaleString() : "Select date & time"}
@@ -525,77 +471,53 @@ export default function AddNewGoalScreen() {
           />
         ) : null}
         {deadlineError ? (
-          <Text style={{ color: "red", marginTop: 6 }}>{deadlineError}</Text>
+          <Text style={styles.inlineErrorText}>{deadlineError}</Text>
         ) : null}
       </View>
 
-      <View style={{ marginBottom: 16 }}>
-        <Text style={{ marginBottom: 6 }}>Title</Text>
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>Title</Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
           placeholder="Goal title"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 6,
-            padding: 10,
-          }}
+          style={styles.input}
         />
       </View>
 
-      <View style={{ marginBottom: 16 }}>
-        <Text style={{ marginBottom: 6 }}>Description</Text>
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>Description</Text>
         <TextInput
           value={description}
           onChangeText={setDescription}
           placeholder="Goal description"
           multiline
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 6,
-            padding: 10,
-            minHeight: 80,
-            textAlignVertical: "top",
-          }}
+          style={[styles.input, styles.multilineInput]}
         />
       </View>
 
-      <View style={{ marginBottom: 16 }}>
-        <Text style={{ marginBottom: 6 }}>Bounty amount</Text>
+      <View style={styles.section}>
+        <Text style={styles.inputLabel}>Bounty amount</Text>
         <TextInput
           value={bountyAmount}
           onChangeText={setBountyAmount}
           placeholder="100"
           keyboardType="number-pad"
-          style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 6,
-            padding: 10,
-          }}
+          style={styles.input}
         />
       </View>
 
-      {submitError ? (
-        <Text style={{ color: "red", marginBottom: 12 }}>{submitError}</Text>
-      ) : null}
+      {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
 
       <TouchableOpacity
-        style={{
-          backgroundColor: isSubmitting ? "#555" : "#111",
-          paddingVertical: 12,
-          borderRadius: 8,
-          alignItems: "center",
-          marginBottom: 12,
-        }}
+        style={[
+          styles.submitButton,
+          isSubmitting ? styles.submitButtonDisabled : styles.submitButtonActive,
+        ]}
         disabled={isSubmitting}
         onPress={handleSubmit}
       >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
-          {isSubmitting ? "Submitting..." : "Submit"}
-        </Text>
+        <Text style={styles.submitButtonText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

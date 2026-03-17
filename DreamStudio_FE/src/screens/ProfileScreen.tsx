@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AuthContext from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
+import { styles } from "../styles/ProfileScreen.styles";
 
 type UserProfile = {
   first_name: string;
@@ -52,56 +53,40 @@ export default function ProfileScreen() {
   const bountyValue = profile?.bounty_amount ?? profile?.bounty_balance ?? 0;
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 12 }}>
-        Profile
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>Profile</Text>
 
       {isLoading ? <ActivityIndicator size="large" /> : null}
-      {errorMessage ? <Text style={{ color: "red", marginBottom: 10 }}>{errorMessage}</Text> : null}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
       {profile ? (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#e0e0e0",
-            borderRadius: 10,
-            padding: 14,
-            gap: 8,
-          }}
-        >
+        <View style={styles.card}>
           <Text>
-            <Text style={{ fontWeight: "600" }}>First name: </Text>
+            <Text style={styles.labelText}>First name: </Text>
             {profile.first_name || "-"}
           </Text>
           <Text>
-            <Text style={{ fontWeight: "600" }}>Last name: </Text>
+            <Text style={styles.labelText}>Last name: </Text>
             {profile.last_name || "-"}
           </Text>
           <Text>
-            <Text style={{ fontWeight: "600" }}>Email: </Text>
+            <Text style={styles.labelText}>Email: </Text>
             {profile.email || "-"}
           </Text>
           <Text>
-            <Text style={{ fontWeight: "600" }}>Bounty amount: </Text>{bountyValue}
+            <Text style={styles.labelText}>Bounty amount: </Text>{bountyValue}
           </Text>
         </View>
       ) : null}
 
       <TouchableOpacity
-        style={{
-          backgroundColor: "#111",
-          paddingVertical: 12,
-          borderRadius: 8,
-          marginTop: 16,
-          alignItems: "center",
-        }}
+        style={styles.refreshButton}
         onPress={() => {
           void fetchProfile();
         }}
         disabled={isLoading}
       >
-        <Text style={{ color: "#fff", fontWeight: "600" }}>Refresh Profile</Text>
+        <Text style={styles.refreshButtonText}>Refresh Profile</Text>
       </TouchableOpacity>
     </View>
   );
