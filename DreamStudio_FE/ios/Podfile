@@ -1,3 +1,12 @@
+ENVFILES = {
+  'Debug-Dev' => '.env.dev',
+  'Release-Dev' => '.env.dev',
+  'Debug-Test' => '.env.test',
+  'Release-Test' => '.env.test',
+  'Debug-Prod' => '.env.prod',
+  'Release-Prod' => '.env.prod',
+}
+
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
@@ -17,6 +26,14 @@ end
 target 'DreamStudio_FE' do
   config = use_native_modules!
 
+  project 'DreamStudio_FE',
+  'Debug-Dev' => :debug,
+  'Release-Dev' => :release,
+  'Debug-Test' => :debug,
+  'Release-Test' => :release,
+  'Debug-Prod' => :debug,
+  'Release-Prod' => :release
+  
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

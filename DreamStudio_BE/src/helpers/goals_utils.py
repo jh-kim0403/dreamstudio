@@ -20,7 +20,8 @@ LEFT JOIN LATERAL (
   ORDER BY v.updated_at DESC
   LIMIT 1
 ) v_latest ON TRUE
-WHERE g.deadline >= now();
+WHERE g.deadline >= now()
+AND g.user_id = :user_id;
             """
 
     return db.execute(text(query), {"user_id": str(user_id)}).fetchall()
