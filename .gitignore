@@ -4,3 +4,6 @@
 
 # Project-specific secrets
 DreamStudio_BE/secret.txt
+
+__pycache__/
+*.pyc
