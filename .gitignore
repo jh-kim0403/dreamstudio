@@ -4,6 +4,3 @@
 
 # Project-specific secrets
 DreamStudio_BE/secret.txt
-
-# Backend env
-DreamStudio_BE/dreamstudio.env
