@@ -33,8 +33,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>used for verification of goals</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>used for verification of goals</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -51,11 +55,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>used for verification of goals</string>
-	<key>NSCameraUsageDescription</key>
-	<string>used for verification of goals</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>used for verification of goals</string>
 </dict>
 </plist>
