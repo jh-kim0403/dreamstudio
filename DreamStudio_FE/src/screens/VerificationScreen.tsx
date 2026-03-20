@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { CommonActions, useRoute, useNavigation } from "@react-navigation/native";
 import { launchCamera } from "react-native-image-picker";
 import RNBlobUtil from "react-native-blob-util";
 import AuthContext from "../context/AuthContext";
@@ -57,6 +57,15 @@ export default function VerificationScreen() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadResult, setUploadResult] = useState<string | null>(null);
+
+  const navigateHome = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: "Home" }],
+      })
+    );
+  };
 
   useEffect(() => {
     if (!token || !goalId) {
@@ -497,8 +506,7 @@ export default function VerificationScreen() {
               style={styles.modalButton}
               onPress={() => {
                 setShowUploadModal(false);
-                // @ts-expect-error: app-wide nav types not yet defined
-                navigation.navigate("Home");
+                navigateHome();
               }}
             >
               <Text style={styles.actionButtonText}>Back to Home</Text>
@@ -520,8 +528,7 @@ export default function VerificationScreen() {
             style={styles.modalButton}
             onPress={() => {
               setShowSubmitModal(false);
-              // @ts-expect-error: app-wide nav types not yet defined
-              navigation.navigate("Home");
+              navigateHome();
             }}
           >
             <Text style={styles.actionButtonText}>Back to Home</Text>

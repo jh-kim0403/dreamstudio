@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import AuthContext from "../context/AuthContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useNavigation } from "@react-navigation/native";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
 import { styles } from "../styles/AddNewGoalScreen.styles";
 
@@ -295,8 +295,12 @@ export default function AddNewGoalScreen() {
       setSelectedBibleBook(null);
       setFromChapter("1");
       setToChapter("1");
-      // @ts-expect-error: app-wide nav types not yet defined
-      navigation.navigate("Home");
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: "Home" }],
+        })
+      );
     } catch (error: any) {
       setSubmitError(error?.message ?? "Failed to create goal");
     } finally {

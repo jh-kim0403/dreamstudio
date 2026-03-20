@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useStripe } from "@stripe/stripe-react-native";
 import AuthContext from "../context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
+import { CommonActions, useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
 import { styles } from "../styles/PurchaseBountyAndWithdrawlScreen.styles";
 const MIN_BANK = 5;
@@ -180,8 +180,12 @@ export default function PurchaseBountyAndWithdrawlScreen() {
               style={styles.modalButton}
               onPress={() => {
                 setShowSuccessModal(false);
-                // @ts-expect-error: app-wide nav types not yet defined
-                navigation.navigate("Home");
+                navigation.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "Home" }],
+                  })
+                );
               }}
             >
               <Text style={styles.primaryButtonText}>Back to Home</Text>
