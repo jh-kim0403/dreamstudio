@@ -27,7 +27,7 @@ class GoalType(Base):
         CheckConstraint("verification_type IN ('photo','quiz')"),
         nullable=False,
     )
-    question_count = Column(Integer, server_default=text("10"))
+    question_count = Column(Integer, server_default=text("5"))
     gpt_prompt = Column(Text)
     meta = Column(JSONB, server_default=text("'{}'::jsonb"))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -45,7 +45,7 @@ class Goal(Base):
     title = Column(Text, nullable=False)
     description = Column(Text)
     user_input = Column(Text)
-    bounty_amount = Column(Integer, CheckConstraint("bounty_amount > 0"), nullable=False)
+    bounty_amount = Column(Integer, CheckConstraint("bounty_amount >= 0"), nullable=False)
     deadline = Column(DateTime(timezone=True), nullable=False)
     status = Column(
         String,

@@ -4,7 +4,7 @@ from src.celery_app import celery_app
 from src.helpers.db import SessionLocal
 from src.helpers.maintenance_cost_utils import (
     ingest_weekly_maintenance_costs,
-    three_weeks_prior_window_utc,
+    calculation_window_utc,
 )
 
 
@@ -15,7 +15,7 @@ def ingest_maintenance_costs_for_window(
     db = SessionLocal()
     try:
         if week_start_iso is None and week_end_iso is None:
-            week_start, week_end = three_weeks_prior_window_utc()
+            week_start, week_end = calculation_window_utc()
             source = "automated"
         elif week_start_iso is not None and week_end_iso is not None:
             week_start = datetime.fromisoformat(week_start_iso)

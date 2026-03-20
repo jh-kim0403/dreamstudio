@@ -6,7 +6,7 @@ from celery import chain
 from src.celery_app import celery_app
 from src.helpers.bounty_ledger_utils import apply_bounty_ledger_entry
 from src.helpers.db import SessionLocal
-from src.helpers.maintenance_cost_utils import three_weeks_prior_window_utc
+from src.helpers.maintenance_cost_utils import calculation_window_utc
 from src.models.distribution_schemas import (
     WeeklyPoolDistribution,
     WeeklyPoolDistributionItem,
@@ -58,7 +58,7 @@ def distribute_weekly_pool(
         week_end_iso = week_end_iso or ingest_result.get("week_end")
 
     if week_start_iso is None or week_end_iso is None:
-        week_start, week_end = three_weeks_prior_window_utc()
+        week_start, week_end = calculation_window_utc()
     else:
         week_start = datetime.fromisoformat(week_start_iso)
         week_end = datetime.fromisoformat(week_end_iso)

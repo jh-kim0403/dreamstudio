@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS goals (
   deadline              TIMESTAMPTZ NOT NULL,
 
   status                TEXT NOT NULL DEFAULT 'pending'
-                        CHECK (status IN ('pending', 'canceled', 'finalized', 'in validation', 'submitted')), 
+                        CHECK (status IN ('pending', 'canceled', 'finalized', 'validating')), 
                         --Pending is the default when the goal is first created
   quiz_question_status  TEXT NOT NULL DEFAULT 'none'
                         CHECK (quiz_question_status IN ('pending', 'failed', 'created', 'none')),

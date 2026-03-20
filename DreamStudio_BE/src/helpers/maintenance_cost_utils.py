@@ -20,15 +20,15 @@ def _to_cents(amount: Decimal | float | int | str) -> int:
     return int(cents)
 
 
-def three_weeks_prior_window_utc(now: datetime | None = None) -> tuple[datetime, datetime]:
+def calculation_window_utc(now: datetime | None = None) -> tuple[datetime, datetime]:
     current = now or datetime.now(timezone.utc)
     week_start_this = (current - timedelta(days=current.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     # Use the week window from 3 weeks prior to allow contest periods before payout.
-    week_start_three_weeks_prior = week_start_this - timedelta(days=21)
-    week_end_three_weeks_prior = week_start_this - timedelta(days=14)
-    return week_start_three_weeks_prior, week_end_three_weeks_prior
+    week_start_prior = week_start_this - timedelta(days=8)
+    week_end_prior = week_start_this - timedelta(days=1)
+    return week_start_prior, week_end_prior
 
 
 @dataclass
