@@ -29,6 +29,9 @@ class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str
 
+class LogOutRequest(BaseModel):
+    refresh_token: str
+
 class RefreshRequest(BaseModel):
     user_id: UUID
     refresh_token: str

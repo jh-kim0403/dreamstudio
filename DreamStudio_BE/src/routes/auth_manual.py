@@ -4,8 +4,7 @@ from sqlalchemy import func
 import ipaddress
 from typing import Optional
 from passlib.hash import argon2
-from ..models import auth_models
-from ..models import auth_schemas 
+from ..models import auth_models, auth_schemas
 from ..helpers.db import get_db
 from ..helpers import auth_utils as tk
 from datetime import datetime, timezone
@@ -97,4 +96,19 @@ def login_manual(payload: auth_models.ManualLoginRequest, response: Response, db
         refresh_token=refresh_token
     )
 
-    
+@router.post("/logout")
+def logout(payload: auth_models.LogOutRequest, response: Response, db: Session = Depends(get_db)):
+    try:
+        rs = (db.query(auth_schemas.RefreshToken)
+            .filter(auth_schemas.RefreshToken.refresh_token == payload.refresh_token)
+            .first())
+        if rs:
+            db.delete(rs)
+            db.commit()
+            return {"message": "Logged out successfully"}
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Logout failed",
+        )
