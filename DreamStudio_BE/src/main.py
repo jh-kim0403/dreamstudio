@@ -10,9 +10,12 @@ Celery - Django (Async)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from src.routes import auth_manual, auth_google, goals, auth_refresh, verifications, payments, user, admin_maintenance_costs
 from src.gpt import apicalls# no leading dot
 from src.config import settings
+from src.helpers.limiter import limiter
 import logging
 logging.basicConfig(level=logging.INFO)
 
@@ -22,6 +25,8 @@ app = FastAPI(
     title=settings.app_name,
     debug=settings.debug
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS for mobile app development
 app.add_middleware(

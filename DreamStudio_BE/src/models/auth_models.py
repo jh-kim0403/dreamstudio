@@ -32,6 +32,9 @@ class LoginResponse(BaseModel):
 class LogOutRequest(BaseModel):
     refresh_token: str
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
 class RefreshRequest(BaseModel):
     user_id: UUID
     refresh_token: str

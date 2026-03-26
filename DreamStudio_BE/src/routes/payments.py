@@ -2,6 +2,7 @@ import logging
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from src.helpers.limiter import limiter
 from src.helpers.bounty_ledger_utils import apply_bounty_ledger_entry
 from src.helpers.auth_utils import validate_access_token
 from src.helpers.db import get_db
@@ -23,7 +24,9 @@ MIN_CARD_CENTS = 1000
 
 
 @router.post("/create-payment-intent", response_model=CreatePaymentIntentResponse)
+@limiter.limit("10/minute")
 def create_payment_intent(
+    request: Request,
     payload: CreatePaymentIntentRequest,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db),

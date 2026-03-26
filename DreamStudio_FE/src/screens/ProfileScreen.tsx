@@ -18,6 +18,7 @@ export default function ProfileScreen() {
   const token = auth?.token ?? null;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchProfile = async () => {
@@ -43,6 +44,15 @@ export default function ProfileScreen() {
       setErrorMessage(error?.message ?? "Failed to load profile");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await auth?.logout();
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -81,12 +91,20 @@ export default function ProfileScreen() {
 
       <TouchableOpacity
         style={styles.refreshButton}
-        onPress={() => {
-          void fetchProfile();
-        }}
+        onPress={() => { void fetchProfile(); }}
         disabled={isLoading}
       >
         <Text style={styles.refreshButtonText}>Refresh Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={() => { void handleLogout(); }}
+        disabled={isLoggingOut}
+      >
+        <Text style={styles.logoutButtonText}>
+          {isLoggingOut ? "Logging out…" : "Log Out"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

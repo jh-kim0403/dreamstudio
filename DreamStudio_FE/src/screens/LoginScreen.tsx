@@ -4,7 +4,7 @@ import { View, Text } from 'react-native';
 import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
 import AuthContext from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { styles } from "../styles/LoginScreen.styles";
 
 type LoginResponse = {
@@ -23,6 +23,8 @@ const LoginScreen = () => {
     const [isInProgress, setIsInProgress] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const navigation = useNavigation();
+    const route = useRoute();
+    const successMessage = (route.params as any)?.successMessage ?? null;
 
     const isSuccessResponse = (response: any): response is { data: any } => {
         return response && response.data;
@@ -139,6 +141,7 @@ const LoginScreen = () => {
             />
             <Button title="Login" onPress={handleLogin} disabled={isInProgress} />
 
+            {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
             {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             
 

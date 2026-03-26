@@ -19,9 +19,10 @@ export interface AuthContextType {
     user: any;
     token: string | null;
     isLoggedIn: boolean;
+    isAuthBootstrapping: boolean;
   
     login: (data: LoginPayload) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     refreshToken: () => Promise<string | null>;
     authFetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
     updateProfile: (changes: any) => Promise<void>;

@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
+  PermissionsAndroid,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -10,6 +12,7 @@ import {
 import { CommonActions, useRoute, useNavigation } from "@react-navigation/native";
 import { launchCamera } from "react-native-image-picker";
 import RNBlobUtil from "react-native-blob-util";
+import Geolocation from "react-native-geolocation-service";
 import AuthContext from "../context/AuthContext";
 import { API_BASE_URL } from "../config/api";
 import { styles } from "../styles/VerificationScreen.styles";
@@ -244,6 +247,33 @@ export default function VerificationScreen() {
     }
   };
 
+  const requestLocationPermission = async (): Promise<boolean> => {
+    if (Platform.OS === "android") {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: "Location Permission Required",
+          message: "Your location is required to verify your goal completion.",
+          buttonPositive: "Allow",
+          buttonNegative: "Deny",
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } else {
+      const auth = await Geolocation.requestAuthorization("whenInUse");
+      return auth === "granted";
+    }
+  };
+
+  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> =>
+    new Promise((resolve, reject) => {
+      Geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        (err) => reject(new Error(err.message)),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    });
+
   const handlePhotoUpload = async () => {
     if (!token) {
       setUploadError("Missing access token.");
@@ -259,6 +289,11 @@ export default function VerificationScreen() {
     setUploadResult(null);
     setIsUploading(true);
     try {
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        throw new Error("Location permission is required to submit a photo verification.");
+      }
+      const location = await getCurrentLocation();
       const result = await launchCamera({ mediaType: "photo" });
       if (result.didCancel) {
         return;
@@ -329,7 +364,7 @@ export default function VerificationScreen() {
           body: JSON.stringify({
             verification_id: verificationId,
             s3_key: s3Key,
-            meta: {},
+            meta: { latitude: location.latitude, longitude: location.longitude },
           }),
         }
       );

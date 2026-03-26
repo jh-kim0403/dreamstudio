@@ -2,12 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import ipaddress
+import hashlib
+import secrets
 from typing import Optional
 from passlib.hash import argon2
 from ..models import auth_models, auth_schemas
 from ..helpers.db import get_db
 from ..helpers import auth_utils as tk
-from datetime import datetime, timezone
+from ..helpers.email import send_verification_email
+from datetime import datetime, timezone, timedelta
 
 
 
@@ -39,9 +42,15 @@ def _extract_client_ip(request: Request) -> Optional[str]:
     except ValueError:
         return None
 
+def _generate_verification_token() -> tuple[str, str]:
+    """Return (raw_token, token_hash). Store the hash; email the raw token."""
+    raw = secrets.token_urlsafe(32)
+    hashed = hashlib.sha256(raw.encode()).hexdigest()
+    return raw, hashed
+
+
 @router.post("/signup", response_model=auth_models.SignUpResponse)
 def signup_manual(payload: auth_models.SignupManual, request: Request, db: Session = Depends(get_db)):
-    # check existing
     existing = db.query(auth_schemas.User).filter(auth_schemas.User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -51,6 +60,7 @@ def signup_manual(payload: auth_models.SignupManual, request: Request, db: Sessi
         first_name=payload.first_name,
         last_name=payload.last_name,
         signup_ip=_extract_client_ip(request),
+        is_active=False,
     )
     db.add(user)
     db.flush()  # to get user.id
@@ -62,8 +72,18 @@ def signup_manual(payload: auth_models.SignupManual, request: Request, db: Sessi
         password_hash=argon2.hash(payload.password),
     )
     db.add(identity)
+
+    raw_token, token_hash = _generate_verification_token()
+    verification = auth_schemas.EmailVerificationToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    )
+    db.add(verification)
     db.commit()
     db.refresh(user)
+
+    send_verification_email(user.email, user.first_name, raw_token)
     return user
     
 
@@ -96,19 +116,44 @@ def login_manual(payload: auth_models.ManualLoginRequest, response: Response, db
         refresh_token=refresh_token
     )
 
-@router.post("/logout")
-def logout(payload: auth_models.LogOutRequest, response: Response, db: Session = Depends(get_db)):
-    try:
-        rs = (db.query(auth_schemas.RefreshToken)
-            .filter(auth_schemas.RefreshToken.refresh_token == payload.refresh_token)
-            .first())
-        if rs:
-            db.delete(rs)
-            db.commit()
-            return {"message": "Logged out successfully"}
-    except Exception:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Logout failed",
-        )
+
+@router.get("/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    record = (
+        db.query(auth_schemas.EmailVerificationToken)
+        .filter(auth_schemas.EmailVerificationToken.token_hash == token_hash)
+        .first()
+    )
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+    if record.used_at is not None:
+        raise HTTPException(status_code=400, detail="Token already used")
+    if record.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Token expired")
+
+    record.used_at = datetime.now(timezone.utc)
+    record.user.email_verified = True
+    record.user.is_active = True
+    db.commit()
+    return {"message": "Email verified successfully"}
+
+
+@router.post("/resend-verification")
+def resend_verification(payload: auth_models.ResendVerificationRequest, db: Session = Depends(get_db)):
+    user = db.query(auth_schemas.User).filter(auth_schemas.User.email == payload.email).first()
+    # Always return 200 to avoid leaking whether an email is registered
+    if not user or user.email_verified:
+        return {"message": "If that email exists and is unverified, a new link has been sent"}
+
+    raw_token, token_hash = _generate_verification_token()
+    verification = auth_schemas.EmailVerificationToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    )
+    db.add(verification)
+    db.commit()
+
+    send_verification_email(user.email, user.first_name, raw_token)
+    return {"message": "If that email exists and is unverified, a new link has been sent"}

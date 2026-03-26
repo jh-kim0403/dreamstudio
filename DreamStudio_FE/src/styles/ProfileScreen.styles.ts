@@ -35,4 +35,15 @@ export const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+  logoutButton: {
+    backgroundColor: "#c0392b",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
 });

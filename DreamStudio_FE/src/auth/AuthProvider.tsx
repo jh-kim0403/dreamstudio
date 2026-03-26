@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useState, useCallback, useRef } from 'react';
+import React, { ReactNode, useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import * as Keychain from 'react-native-keychain';
 import AuthContext, { LoginPayload } from '../context/AuthContext.tsx';
 import { API_BASE_URL } from '../config/api';
@@ -10,6 +10,7 @@ interface AuthContextProviderProps {
 export default function AuthContextProvider({ children } : AuthContextProviderProps) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isAuthBootstrapping, setIsAuthBootstrapping] = useState(true);
   const refreshInFlight = useRef<Promise<string | null> | null>(null);
 
   const login = useCallback(async (data: LoginPayload) => {
@@ -25,10 +26,22 @@ export default function AuthContextProvider({ children } : AuthContextProviderPr
     });
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const credentials = await Keychain.getGenericPassword({ service: 'refresh-token' });
     setToken(null);
     setUser(null);
-    void Keychain.resetGenericPassword({ service: 'refresh-token' });
+    await Keychain.resetGenericPassword({ service: 'refresh-token' });
+    if (credentials && credentials.password) {
+      try {
+        await fetch(`${API_BASE_URL}/user/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: credentials.password }),
+        });
+      } catch {
+        // Local logout already done — server revocation is best-effort
+      }
+    }
   }, []);
 
   const refreshToken = useCallback(async () => {
@@ -78,6 +91,26 @@ export default function AuthContextProvider({ children } : AuthContextProviderPr
       refreshInFlight.current = null;
     }
   }, [logout]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const restoreSession = async () => {
+      try {
+        await refreshToken();
+      } finally {
+        if (isMounted) {
+          setIsAuthBootstrapping(false);
+        }
+      }
+    };
+
+    void restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshToken]);
 
   const decodeBase64 = (input: string) => {
     const atobFn = (globalThis as any)?.atob;
@@ -148,12 +181,13 @@ export default function AuthContextProvider({ children } : AuthContextProviderPr
     user,
     token,
     isLoggedIn: Boolean(token),
+    isAuthBootstrapping,
     login,
     logout,
     refreshToken,
     authFetch,
     updateProfile,
-  }), [token, user, authFetch, refreshToken]);
+  }), [token, user, isAuthBootstrapping, authFetch, refreshToken, login, logout, updateProfile]);
 
   return (
     <AuthContext.Provider value={value}>

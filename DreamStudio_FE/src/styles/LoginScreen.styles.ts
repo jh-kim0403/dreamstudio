@@ -5,6 +5,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 24,
   },
+  successText: {
+    color: "#27ae60",
+    marginBottom: 12,
+  },
   errorText: {
     marginBottom: 12,
   },

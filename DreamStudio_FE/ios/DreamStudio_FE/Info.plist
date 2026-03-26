@@ -36,7 +36,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>used for verification of goals</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Your location is required to verify your goal completion.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>used for verification of goals</string>
 	<key>RCTNewArchEnabled</key>
@@ -55,5 +55,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>org.jkapps.goalstudio</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>goalstudio</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

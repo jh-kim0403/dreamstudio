@@ -4,6 +4,7 @@ import { View, Text } from 'react-native';
 import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
 import AuthContext from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
+import { useNavigation } from '@react-navigation/native';
 type LoginResponse = {
     user_id: string;
     email: string;
@@ -15,6 +16,7 @@ type LoginResponse = {
 
 export default function SignUpScreen(){
     const auth = useContext(AuthContext);
+    const navigation = useNavigation();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -54,17 +56,8 @@ export default function SignUpScreen(){
                 const err = await response.json().catch(() => null);
                 throw new Error(err?.detail || 'Sign up failed');
             }
-            const loginResponse = await fetch(`${API_BASE_URL}/auth/manual/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            if (!loginResponse.ok) {
-                const err = await loginResponse.json().catch(() => null);
-                throw new Error(err?.detail || 'Auto login failed');
-            }
-            const data: LoginResponse = await loginResponse.json();
-            await handleAuthResponse(data);
+            // @ts-expect-error: app-wide nav types not yet defined
+            navigation.navigate('Login', { successMessage: 'Sign up successful. Please verify your email.' });
         } catch (error: any) {
             setErrorMessage(error?.message ?? 'Sign up failed');
         } finally {

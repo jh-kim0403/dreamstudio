@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     stripe_secret_key: str = Field(..., alias="STRIPE_SECRET_KEY")
     stripe_webhook_secret: str = Field(..., alias="STRIPE_WEBHOOK_SECRET")
 
+    ses_access_key: str = Field(..., alias="SES_ACCESS_KEY")
+    ses_secret_key: str = Field(..., alias="SES_SECRET_KEY")
+    sender_email: str = Field(..., alias="SENDER_EMAIL")
+
     postgres_user: str = Field(..., alias="POSTGRES_USER")
     postgres_password: str = Field(..., alias="POSTGRES_PASSWORD")
     postgres_host: str = Field(..., alias="POSTGRES_HOST")

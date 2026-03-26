@@ -1,13 +1,10 @@
-import json
 import logging
-from openai import OpenAI
 from src.celery_app import celery_app
-from src.config import settings
 from src.helpers.db import SessionLocal
 from src.helpers.s3 import presign_get
+from src.helpers.openai import evaluate_photo
 from src.models import verifications_schemas, goal_schemas
 
-client = OpenAI(api_key=settings.openai_api_key)
 
 @celery_app.task(bind=True, max_retries=0, default_retry_delay=20)
 def evaluate_submission(self, submission_id: str):
@@ -49,34 +46,9 @@ def evaluate_photo_verification(self, verification_id: str):
 
         image_url = presign_get(photo.s3_key, expires_seconds=300)
 
-        prompt = goal_type.gpt_prompt
-
-        resp = client.responses.create(
-            model="gpt-4o-mini",
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        {"type": "input_image", "image_url": image_url},
-                    ],
-                }
-            ],
-            text={"format": {"type": "json_object"}},
-            temperature=0.2,
-            max_output_tokens=200,
-            store=False,
-        )
-
-        try:
-            data = json.loads(resp.output_text)
-            is_true = bool(data.get("is_true"))
-            confidence = data.get("confidence")
-            reason = data.get("reason")
-        except Exception as e:
-            raise ValueError(f"invalid model response: {e}")
-
-        if is_true:
+        result = evaluate_photo(prompt=goal_type.gpt_prompt, image_url=image_url)
+        
+        if result.is_true:
             verification.result = "approved"
             goal.verification_status = "completed"
             goal.status = "validating"
@@ -85,17 +57,15 @@ def evaluate_photo_verification(self, verification_id: str):
             goal.verification_status = "failed"
             goal.status = "pending"
 
-        
         meta = dict(photo.meta or {})
         meta["ai_check"] = {
-            "is_true": is_true,
-            "confidence": confidence,
-            "reason": reason,
-            "model": "gpt-4o-mini",
+            "is_true": result.is_true,
+            "prob_true": result.prob_true,
+            "prob_false": result.prob_false,
+            "reason": result.reason,
         }
         photo.meta = meta
         db.commit()
-        logging.info("Reason: %s \n Confidence: %s", reason, confidence)
         return {"verification_id": verification_id, "result": verification.result}
     except Exception as e:
         logging.exception("Photo verification failed: %s", verification_id)

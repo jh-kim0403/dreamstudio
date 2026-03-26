@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from src.helpers.limiter import limiter
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Optional
@@ -19,7 +20,9 @@ from src.helpers.bounty_ledger_utils import apply_bounty_ledger_entry
 
 router = APIRouter(prefix="/api/v1/goals", tags=["Goals"])
 @router.post("/newgoal", response_model=goal_models.goalResponse)
+@limiter.limit("20/hour")
 def create_goal(
+    request: Request,
     payload: goal_models.goalRequest,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db),
@@ -67,7 +70,8 @@ def create_goal(
 
     
 @router.get("/goaltypes", response_model=list[goal_models.goalTypeResponse])
-def get_goal_types(user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def get_goal_types(request: Request, user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
     goal_types = db.query(goal_schemas.GoalType).all()
     if not goal_types:
         raise HTTPException(402, "Goal types not found")
@@ -75,6 +79,7 @@ def get_goal_types(user_id: UUID = Depends(validate_access_token), db: Session =
     return [goal_models.goalTypeResponse.model_validate(r) for r in goal_types]
 
 @router.get("/getcurrentgoals", response_model=list[goal_models.currentGoalResponse])
-def get_current_goals(user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def get_current_goals(request: Request, user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
     all_goals = current_goals_for_user(user_id, db)
     return [goal_models.currentGoalResponse.model_validate(r._mapping) for r in all_goals]

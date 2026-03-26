@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from src.helpers.limiter import limiter
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.models.verifications_models import PresignRequest, PresignResponse, ConfirmRequest, PhotoViewResponse, QuizQuestionResponse, QuizSubmitRequest, VerificationTypeResponse, CreateVerificationResponse
@@ -19,8 +20,10 @@ from src.helpers.verification_utils import get_quizzes, get_user, get_verificati
 router = APIRouter(prefix="/api/v1/verification", tags=["Goals"])
 
 @router.get("/verification-type/{goal_id}")
+@limiter.limit("20/minute")
 def get_verification_type(
-    goal_id: UUID, 
+    request: Request,
+    goal_id: UUID,
     response_model=VerificationTypeResponse,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db)
@@ -39,7 +42,9 @@ def get_verification_type(
     )
 
 @router.post("/create/{goal_id}", response_model=CreateVerificationResponse)
+@limiter.limit("10/hour")
 def create_verification(
+    request: Request,
     goal_id: UUID,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db)
@@ -71,8 +76,10 @@ def create_verification(
     return CreateVerificationResponse(verification_id=str(record.id))
 
 @router.get("/getquiz/{goal_id}")
+@limiter.limit("20/minute")
 def get_quiz(
-    goal_id: UUID, 
+    request: Request,
+    goal_id: UUID,
     response_model=QuizQuestionResponse,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db)
@@ -81,7 +88,9 @@ def get_quiz(
     
 
 @router.post("/quiz/submit")
+@limiter.limit("20/hour")
 def quiz_submit(
+    request: Request,
     payload: QuizSubmitRequest,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db)
@@ -90,7 +99,9 @@ def quiz_submit(
     return {"result": result}
 
 @router.post("/photos/presign", response_model=PresignResponse)
+@limiter.limit("20/hour")
 def presign(
+    request: Request,
     req: PresignRequest,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db)
@@ -114,7 +125,9 @@ def presign(
 
 
 @router.post("/photos/confirm")
+@limiter.limit("20/hour")
 def confirm(
+    request: Request,
     req: ConfirmRequest,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db),
@@ -159,7 +172,9 @@ def confirm(
 
 
 @router.get("/verification-photos/{verification_id}", response_model=PhotoViewResponse)
+@limiter.limit("20/minute")
 def get_photo(
+    request: Request,
     verification_id: str,
     user_id: UUID = Depends(validate_access_token),
     db: Session = Depends(get_db),
