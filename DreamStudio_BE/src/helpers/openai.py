@@ -28,9 +28,6 @@ def evaluate_photo(prompt: str, image_url: str) -> PhotoEvalResult:
             }
         ],
         text={"format": {"type": "json_object"}},
-        temperature=0.2,
-        max_output_tokens=200,
-        store=False,
     )
     token_usage = resp.usage
     try:
