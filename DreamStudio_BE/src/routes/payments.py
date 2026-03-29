@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from src.helpers.limiter import limiter
 from src.helpers.bounty_ledger_utils import apply_bounty_ledger_entry
+from src.helpers.stripe_utils import construct_webhook_event, StripeWebhookError
 from src.helpers.auth_utils import validate_access_token
 from src.helpers.db import get_db
 from src.models.bounty_schemas import BountyTransaction
@@ -86,13 +87,13 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Missing Stripe signature")
 
     try:
-        event = stripe.Webhook.construct_event(
+        event = construct_webhook_event(
             payload=payload,
             sig_header=sig_header,
-            secret=STRIPE_WEBHOOK_SECRET,
+            webhook_secret=STRIPE_WEBHOOK_SECRET,
         )
-    except (ValueError, stripe.error.SignatureVerificationError) as exc:
-        raise HTTPException(status_code=400, detail="Invalid Stripe signature") from exc
+    except StripeWebhookError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     logging.info("event received")
     event_type = event.get("type")
     data_object = event.get("data", {}).get("object", {})

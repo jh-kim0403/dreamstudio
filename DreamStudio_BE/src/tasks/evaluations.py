@@ -3,7 +3,7 @@ from src.celery_app import celery_app
 from src.helpers.db import SessionLocal
 from src.helpers.s3 import presign_get
 from src.helpers.openai import evaluate_photo
-from src.models import verifications_schemas, goal_schemas
+from src.helpers.verification_utils import get_photo_verification_record, serper_image_search, hash_image, compare_image
 
 
 @celery_app.task(bind=True, max_retries=0, default_retry_delay=20)
@@ -26,46 +26,42 @@ def evaluate_photo_verification(self, verification_id: str):
     """
     Evaluate a photo verification with GPT.
     """
+    logging.info("evaluate_photo_verification started: %s", verification_id)
     db = SessionLocal()
     try:
-        record = (
-            db.query(verifications_schemas.Verification, verifications_schemas.VerificationPhoto, goal_schemas.Goal, goal_schemas.GoalType)
-            .join(verifications_schemas.VerificationPhoto,
-                  verifications_schemas.VerificationPhoto.verification_id == verifications_schemas.Verification.id)
-            .join(goal_schemas.Goal, verifications_schemas.Verification.goal_id == goal_schemas.Goal.id)
-            .join(goal_schemas.GoalType, goal_schemas.Goal.goal_type_id == goal_schemas.GoalType.id)
-            .filter(verifications_schemas.Verification.id == verification_id)
-            .first()
-        )
-        if not record:
-            raise ValueError("verification not found")
+        verification, photo, goal, goal_type = get_photo_verification_record(db, verification_id)
 
-        verification, photo, goal, goal_type = record
-        if verification.type != "photo":
-            raise ValueError("verification type must be photo")
-
-        image_url = presign_get(photo.s3_key, expires_seconds=300)
-
-        result = evaluate_photo(prompt=goal_type.gpt_prompt, image_url=image_url)
+        goal_image_url = presign_get(photo.s3_key, expires_seconds=300)
         
-        if result.is_true:
-            verification.result = "approved"
-            goal.verification_status = "completed"
-            goal.status = "validating"
-        else:
+        serper_result = serper_image_search(goal_image_url)
+        exact_matches = serper_result.get("exactMatches")
+        
+
+        if exact_matches and compare_image(hash_image(goal_image_url), hash_image(exact_matches[0]["link"])):
             verification.result = "rejected"
             goal.verification_status = "failed"
             goal.status = "pending"
+        else:
+            result = evaluate_photo(prompt=goal_type.gpt_prompt, image_url=goal_image_url)
+            if result.is_true:
+                verification.result = "approved"
+                goal.verification_status = "completed"
+                goal.status = "validating"
+            else:
+                verification.result = "rejected"
+                goal.verification_status = "failed"
+                goal.status = "pending"
 
-        meta = dict(photo.meta or {})
-        meta["ai_check"] = {
-            "is_true": result.is_true,
-            "prob_true": result.prob_true,
-            "prob_false": result.prob_false,
-            "reason": result.reason,
-        }
-        photo.meta = meta
+            meta = dict(photo.meta or {})
+            meta["ai_check"] = {
+                "is_true": result.is_true,
+                "prob_true": result.prob_true,
+                "prob_false": result.prob_false,
+                "reason": result.reason,
+            }
+            photo.meta = meta
         db.commit()
+        logging.info("Successfully evaluated photo for verification: %s", verification_id)
         return {"verification_id": verification_id, "result": verification.result}
     except Exception as e:
         logging.exception("Photo verification failed: %s", verification_id)

@@ -3,6 +3,13 @@ from src.models.verifications_models import UserSubmission
 from sqlalchemy.orm import Session
 from uuid import UUID
 from fastapi import HTTPException
+from src.helpers.serper import reverse_image_search, SerperError
+import requests
+import imagehash
+from PIL import Image
+from io import BytesIO
+
+DISTANCE_THRESHHOLD=10
 
 def get_user(db: Session, user_id: UUID) -> auth_schemas.User:
     user = db.query(auth_schemas.User).filter(auth_schemas.User.id == user_id).first()
@@ -102,3 +109,46 @@ def evaluate_quiz_submission(
     db.add_all(inputs)
     db.commit()
     return result
+
+def get_photo_verification_record(
+    db: Session,
+    verification_id: str,
+) -> tuple[verifications_schemas.Verification, verifications_schemas.VerificationPhoto, goal_schemas.Goal, goal_schemas.GoalType]:
+    record = (
+        db.query(verifications_schemas.Verification, verifications_schemas.VerificationPhoto, goal_schemas.Goal, goal_schemas.GoalType)
+        .join(verifications_schemas.VerificationPhoto,
+              verifications_schemas.VerificationPhoto.verification_id == verifications_schemas.Verification.id)
+        .join(goal_schemas.Goal, verifications_schemas.Verification.goal_id == goal_schemas.Goal.id)
+        .join(goal_schemas.GoalType, goal_schemas.Goal.goal_type_id == goal_schemas.GoalType.id)
+        .filter(verifications_schemas.Verification.id == verification_id)
+        .first()
+    )
+    if not record:
+        raise ValueError("verification not found")
+
+    verification, photo, goal, goal_type = record
+    if verification.type != "photo":
+        raise ValueError("verification type must be photo")
+
+    return verification, photo, goal, goal_type
+
+def serper_image_search(image_url: str) -> dict:
+    try:
+        return reverse_image_search(image_url=image_url)
+    except SerperError as exc:
+        message = str(exc)
+        status_code = 500 if "not configured" in message else 502
+        raise HTTPException(status_code=status_code, detail=message)
+    
+
+def compare_image(user_submitted_image, serper_found_image) -> bool:
+    distance = user_submitted_image - serper_found_image  # Hamming distance
+    is_similar = distance <= DISTANCE_THRESHHOLD  # threshold: 0 = identical, ~10 = very similar
+    return is_similar
+
+def hash_image(image_url: str) -> imagehash.ImageHash:
+    return imagehash.phash(_fetch_image(image_url))
+    
+def _fetch_image(image_url: str) -> Image:
+    r = requests.get(image_url)
+    return Image.open(BytesIO(r.content))
