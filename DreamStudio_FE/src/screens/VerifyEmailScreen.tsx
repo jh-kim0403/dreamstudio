@@ -7,6 +7,7 @@ export default function VerifyEmailScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const token = (route.params as any)?.token ?? null;
+  console.log('VerifyEmailScreen token:', token);
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

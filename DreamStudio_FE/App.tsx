@@ -104,8 +104,11 @@ function Navigation() {
 export default function App() {
   useEffect(() => {
     const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('Linking event fired:', url);
+      console.log('navigationRef ready:', navigationRef.isReady());
       if (url.startsWith('goalstudio://verify-email') && navigationRef.isReady()) {
         const token = url.split('token=')[1];
+        console.log('Navigating to VerifyEmail with token:', token);
         navigationRef.navigate('VerifyEmail', { token });
       }
     });
