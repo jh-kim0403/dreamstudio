@@ -1,10 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import { ActivityIndicator, StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
 import {
   SafeAreaProvider,
@@ -14,12 +7,11 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
 import AuthContextProvider from './src/auth/AuthProvider';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useContext } from 'react';
 import AuthContext from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
-
 
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51IaRKKFi3VeKp8O4EAEuWDIo4VYcQqgdJeE9TEnQbxNJTwl4OBstWX8zjUhnvhUbFYg2T5hLeGtWatpnW3kLKM5s00XdN4EUYu'; //change later
 
@@ -34,7 +26,20 @@ const linking = {
   },
 };
 
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#1f1f1f',
+    card: '#1f1f1f',
+    text: '#f3f4f6',
+    border: 'rgba(255,255,255,0.10)',
+    primary: '#5d6976',
+  },
+};
+
 const Stack = createNativeStackNavigator();
+
 function Navigation() {
   const auth = useContext(AuthContext);
   const user = auth?.isLoggedIn ?? false;
@@ -43,27 +48,45 @@ function Navigation() {
   if (isAuthBootstrapping) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#aeb4bd" />
       </View>
     );
   }
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#1f1f1f',
+        },
+        headerTintColor: '#f3f4f6',
+        headerTitleStyle: {
+          color: '#f3f4f6',
+          fontWeight: '600',
+        },
+        headerShadowVisible: false,
+        contentStyle: {
+          backgroundColor: '#1f1f1f',
+        },
+      }}
+    >
       {!user ? (
         <>
           <Stack.Screen
             name="Login"
             component={LoginScreen}
-            options={{ title: 'Login' }} />
+            options={{ title: '' }}
+          />
           <Stack.Screen
             name="SignUp"
             component={SignUpScreen}
-            options={{ title: 'SignUp' }} />
+            options={{ title: '' }}
+          />
           <Stack.Screen
             name="VerifyEmail"
             component={VerifyEmailScreen}
-            options={{ title: 'Verify Email' }} />
+            options={{ title: 'Verify Email' }}
+          />
         </>
       ) : (
         <Stack.Screen
@@ -71,21 +94,22 @@ function Navigation() {
           component={AuthenticatedScreens}
           options={{ headerShown: false }}
         />
-
       )}
     </Stack.Navigator>
   );
 }
 
 export default function App() {
-  const isDarkMode = useColorScheme() === 'dark';
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#1f1f1f"
+      />
       <AuthContextProvider>
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-          <NavigationContainer linking={linking}>
+          <NavigationContainer linking={linking} theme={navTheme}>
             <Navigation />
           </NavigationContainer>
         </StripeProvider>
@@ -99,5 +123,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#1f1f1f',
   },
 });

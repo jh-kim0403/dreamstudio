@@ -194,7 +194,7 @@ export default function HomeScreen() {
               {isProfileLoading ? (
                 <ActivityIndicator size="small" color="#aeb4bd" />
               ) : (
-                <Text style={styles.bountyValue}>${formatBountyAmount(bountyValue)}</Text>
+                <Text style={styles.bountyValue}>{formatBountyAmount(bountyValue)}</Text>
               )}
             </View>
           </View>

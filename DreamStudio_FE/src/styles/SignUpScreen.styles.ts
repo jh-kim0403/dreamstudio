@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   screenInner: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 22,
     paddingTop: isTablet ? height * 0.08 : height * 0.06,
     paddingBottom: isTablet ? height * 0.06 : 28,
