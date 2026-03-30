@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Platform,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 import AuthContext from "../context/AuthContext";
@@ -95,62 +95,75 @@ const BIBLE_BOOKS: BibleBook[] = [
   { name: "Revelation", chapters: 22 },
 ];
 
+const setEndOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 0, 0);
+
+const formatDeadlineDisplay = (date: Date | null) => {
+  if (!date) return "Select deadline date";
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
+
 export default function AddNewGoalScreen() {
   const auth = useContext(AuthContext);
   const token = auth?.token ?? null;
   const authFetch = auth?.authFetch;
   const navigation = useNavigation();
+
   const [goalTypes, setGoalTypes] = useState<GoalType[]>([]);
   const [goalTypeError, setGoalTypeError] = useState<string | null>(null);
   const [isGoalTypesLoading, setIsGoalTypesLoading] = useState(false);
   const [isGoalTypeOpen, setIsGoalTypeOpen] = useState(false);
-  const [selectedGoalType, setSelectedGoalType] = useState<GoalType | null>(
-    null
-  );
+  const [selectedGoalType, setSelectedGoalType] = useState<GoalType | null>(null);
 
   const [isBibleBookOpen, setIsBibleBookOpen] = useState(false);
-  const [selectedBibleBook, setSelectedBibleBook] =
-    useState<BibleBook | null>(null);
+  const [selectedBibleBook, setSelectedBibleBook] = useState<BibleBook | null>(null);
   const [fromChapter, setFromChapter] = useState("1");
   const [toChapter, setToChapter] = useState("1");
+
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [deadlineError, setDeadlineError] = useState<string | null>(null);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [bountyAmount, setBountyAmount] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!token) {
-      return;
-    }
-    const fetchGoalTypes = async () => {
-      setIsGoalTypesLoading(true);
-      setGoalTypeError(null);
-      try {
-        const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/goaltypes`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) {
-          const err = await response.json().catch(() => null);
-          throw new Error(err?.detail || "Failed to load goal types");
-        }
-        const data = await response.json();
-        setGoalTypes(Array.isArray(data) ? data : []);
-      } catch (error: any) {
-        setGoalTypeError(error?.message ?? "Failed to load goal types");
-      } finally {
-        setIsGoalTypesLoading(false);
-      }
-    };
+  const fetchGoalTypes = useCallback(async () => {
+    if (!token) return;
 
+    setIsGoalTypesLoading(true);
+    setGoalTypeError(null);
+
+    try {
+      const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/goaltypes`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load goal types");
+      }
+
+      const data = await response.json();
+      setGoalTypes(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      setGoalTypeError("Failed to load goal types");
+    } finally {
+      setIsGoalTypesLoading(false);
+    }
+  }, [token, authFetch]);
+
+  useEffect(() => {
     void fetchGoalTypes();
-  }, [token]);
+  }, [fetchGoalTypes]);
 
   const isBibleGoal = useMemo(() => {
     const name = selectedGoalType?.name?.toLowerCase() ?? "";
@@ -160,115 +173,103 @@ export default function AddNewGoalScreen() {
   const maxChapters = selectedBibleBook?.chapters ?? 0;
 
   useEffect(() => {
-    if (!selectedBibleBook) {
-      return;
-    }
+    if (!selectedBibleBook) return;
     setFromChapter("1");
     setToChapter("1");
   }, [selectedBibleBook]);
 
   const clampChapter = (value: string) => {
     const numeric = parseInt(value || "0", 10);
-    if (!numeric || numeric < 1) {
-      return "1";
-    }
-    if (maxChapters && numeric > maxChapters) {
-      return String(maxChapters);
-    }
+    if (!numeric || numeric < 1) return "1";
+    if (maxChapters && numeric > maxChapters) return String(maxChapters);
     return String(numeric);
   };
 
   const handleFromChange = (value: string) => {
     const next = clampChapter(value.replace(/[^0-9]/g, ""));
     setFromChapter(next);
+
     const nextNum = parseInt(next, 10);
     const toNum = parseInt(toChapter || "1", 10);
+
     if (toNum < nextNum) {
       setToChapter(String(nextNum));
     }
+
+    if (submitError) setSubmitError(null);
   };
 
   const handleToChange = (value: string) => {
     const next = clampChapter(value.replace(/[^0-9]/g, ""));
     const nextNum = parseInt(next, 10);
     const fromNum = parseInt(fromChapter || "1", 10);
+
     if (nextNum < fromNum) {
       setToChapter(String(fromNum));
     } else {
       setToChapter(next);
     }
+
+    if (submitError) setSubmitError(null);
   };
 
   const validateDeadline = (date: Date) => {
     const now = new Date();
     const selected = new Date(date);
+
     if (selected < now) {
-      setDeadlineError("Deadline must be now or later");
+      setDeadlineError("Deadline must be today or later");
       return false;
     }
+
     setDeadlineError(null);
     return true;
   };
-
-  const mergeDate = (base: Date, datePart: Date) =>
-    new Date(
-      datePart.getFullYear(),
-      datePart.getMonth(),
-      datePart.getDate(),
-      base.getHours(),
-      base.getMinutes(),
-      base.getSeconds(),
-      base.getMilliseconds()
-    );
-
-  const mergeTime = (base: Date, timePart: Date) =>
-    new Date(
-      base.getFullYear(),
-      base.getMonth(),
-      base.getDate(),
-      timePart.getHours(),
-      timePart.getMinutes(),
-      timePart.getSeconds(),
-      timePart.getMilliseconds()
-    );
 
   const handleSubmit = async () => {
     if (!token) {
       setSubmitError("Missing access token. Please log in again.");
       return;
     }
+
     if (!selectedGoalType) {
       setSubmitError("Select a goal type.");
       return;
     }
+
     if (!title.trim()) {
       setSubmitError("Enter a title.");
       return;
     }
+
     if (!bountyAmount.trim() || Number.isNaN(Number(bountyAmount))) {
       setSubmitError("Enter a valid bounty amount.");
       return;
     }
+
     if (!deadline) {
       setSubmitError("Select a deadline.");
       return;
     }
+
     if (!validateDeadline(deadline)) {
       setSubmitError("Deadline must be today or later.");
       return;
     }
-    if (isBibleGoal) {
-      if (!selectedBibleBook) {
-        setSubmitError("Select a bible book.");
-        return;
-      }
+
+    if (isBibleGoal && !selectedBibleBook) {
+      setSubmitError("Select a bible book.");
+      return;
     }
 
     setSubmitError(null);
     setIsSubmitting(true);
-    const userInput = isBibleGoal && selectedBibleBook
-      ? `Read ${selectedBibleBook.name} ${fromChapter}-${toChapter}`
-      : "";
+
+    const userInput =
+      isBibleGoal && selectedBibleBook
+        ? `Read ${selectedBibleBook.name} ${fromChapter}-${toChapter}`
+        : "";
+
     try {
       const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/newgoal`, {
         method: "POST",
@@ -284,10 +285,11 @@ export default function AddNewGoalScreen() {
           deadline: deadline.toISOString(),
         }),
       });
+
       if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        throw new Error(err?.detail || "Failed to create goal");
+        throw new Error("Failed to create goal");
       }
+
       setTitle("");
       setDescription("");
       setBountyAmount("");
@@ -295,6 +297,7 @@ export default function AddNewGoalScreen() {
       setSelectedBibleBook(null);
       setFromChapter("1");
       setToChapter("1");
+
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -302,227 +305,259 @@ export default function AddNewGoalScreen() {
         })
       );
     } catch (error: any) {
-      setSubmitError(error?.message ?? "Failed to create goal");
+      setSubmitError("Failed to create goal");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.heading}>Add New Goal</Text>
-
-      <View style={styles.selectorCard}>
-        <TouchableOpacity
-          onPress={() => setIsGoalTypeOpen((prev) => !prev)}
-          style={styles.selectorToggle}
-        >
-          <Text style={styles.selectorLabel}>{selectedGoalType?.name || "Select goal type"}</Text>
-          <Text>{isGoalTypeOpen ? "Hide" : "Show"}</Text>
-        </TouchableOpacity>
-        {isGoalTypeOpen ? (
-          <View style={styles.selectorList}>
-            {isGoalTypesLoading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator />
-              </View>
-            ) : null}
-            {goalTypeError ? (
-              <Text style={[styles.errorText, styles.selectorError]}>{goalTypeError}</Text>
-            ) : null}
-            {goalTypes.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                onPress={() => {
-                  setSelectedGoalType(type);
-                  setIsGoalTypeOpen(false);
-                }}
-                style={styles.selectorItem}
-              >
-                <Text style={styles.selectorItemTitle}>{type.name}</Text>
-                {type.description ? (
-                  <Text style={styles.selectorItemDescription}>{type.description}</Text>
-                ) : null}
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : null}
-      </View>
-
-      {isBibleGoal ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Read the Bible</Text>
-
-          <View style={styles.selectorCard}>
-            <TouchableOpacity
-              onPress={() => setIsBibleBookOpen((prev) => !prev)}
-              style={styles.selectorToggle}
-            >
-              <Text style={styles.selectorLabel}>{selectedBibleBook?.name || "Select bible book"}</Text>
-              <Text>{isBibleBookOpen ? "Hide" : "Show"}</Text>
-            </TouchableOpacity>
-            {isBibleBookOpen ? (
-              <View style={styles.selectorList}>
-                {BIBLE_BOOKS.map((book) => (
-                  <TouchableOpacity
-                    key={book.name}
-                    onPress={() => {
-                      setSelectedBibleBook(book);
-                      setIsBibleBookOpen(false);
-                    }}
-                    style={styles.selectorItem}
-                  >
-                    <Text style={styles.selectorItemTitle}>
-                      {book.name} ({book.chapters} chapters)
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.chapterRow}>
-            <View style={styles.chapterField}>
-              <Text style={styles.inputLabel}>From</Text>
-              <TextInput
-                value={fromChapter}
-                onChangeText={handleFromChange}
-                keyboardType="number-pad"
-                placeholder="1"
-                style={styles.input}
-              />
-            </View>
-            <View style={styles.chapterField}>
-              <Text style={styles.inputLabel}>To</Text>
-              <TextInput
-                value={toChapter}
-                onChangeText={handleToChange}
-                keyboardType="number-pad"
-                placeholder="1"
-                style={styles.input}
-              />
-            </View>
-          </View>
-
-          {selectedBibleBook ? (
-            <Text style={styles.helperText}>Chapters range: 1 to {selectedBibleBook.chapters}</Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Deadline (local time)</Text>
-        <TouchableOpacity
-          onPress={() => setShowDeadlinePicker(true)}
-          style={styles.input}
-        >
-          <Text>
-            {deadline ? deadline.toLocaleString() : "Select date & time"}
-          </Text>
-        </TouchableOpacity>
-        {showDeadlinePicker ? (
-          Platform.OS === "android" ? (
-            <DateTimePicker
-              value={deadline ?? new Date()}
-              mode="date"
-              minimumDate={new Date()}
-              display="default"
-              onChange={(event, selectedDate) => {
-                if (event?.type === "dismissed") {
-                  setShowDeadlinePicker(false);
-                  return;
-                }
-                const base = deadline ?? new Date();
-                const next = selectedDate ? mergeDate(base, selectedDate) : base;
-                setDeadline(next);
-                validateDeadline(next);
-                setShowDeadlinePicker(false);
-                setShowTimePicker(true);
-              }}
-            />
-          ) : (
-            <DateTimePicker
-              value={deadline ?? new Date()}
-              mode="datetime"
-              minimumDate={new Date()}
-              display="default"
-              onChange={(_, selectedDate) => {
-                setShowDeadlinePicker(false);
-                if (selectedDate) {
-                  setDeadline(selectedDate);
-                  validateDeadline(selectedDate);
-                }
-              }}
-            />
-          )
-        ) : null}
-        {showTimePicker && Platform.OS === "android" ? (
-          <DateTimePicker
-            value={deadline ?? new Date()}
-            mode="time"
-            display="default"
-            onChange={(event, selectedDate) => {
-              if (event?.type === "dismissed") {
-                setShowTimePicker(false);
-                return;
-              }
-              const base = deadline ?? new Date();
-              const next = selectedDate ? mergeTime(base, selectedDate) : base;
-              setDeadline(next);
-              validateDeadline(next);
-              setShowTimePicker(false);
-            }}
-          />
-        ) : null}
-        {deadlineError ? (
-          <Text style={styles.inlineErrorText}>{deadlineError}</Text>
-        ) : null}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Title</Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Goal title"
-          style={styles.input}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Description</Text>
-        <TextInput
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Goal description"
-          multiline
-          style={[styles.input, styles.multilineInput]}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Bounty amount</Text>
-        <TextInput
-          value={bountyAmount}
-          onChangeText={setBountyAmount}
-          placeholder="100"
-          keyboardType="number-pad"
-          style={styles.input}
-        />
-      </View>
-
-      {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
-
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          isSubmitting ? styles.submitButtonDisabled : styles.submitButtonActive,
-        ]}
-        disabled={isSubmitting}
-        onPress={handleSubmit}
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.submitButtonText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <View style={styles.contentWrapper}>
+          <Text style={styles.heading}>Add New Goal</Text>
+          <Text style={styles.subtitle}>Set a clear goal and deadline.</Text>
+
+          <View style={styles.formCard}>
+            <View style={styles.formSection}>
+              <Text style={styles.inputLabel}>Goal Type</Text>
+
+              <View style={styles.inlineSelector}>
+                <Pressable
+                  onPress={() => setIsGoalTypeOpen((prev) => !prev)}
+                  style={styles.selectorToggle}
+                >
+                  <Text style={styles.selectorLabel}>
+                    {selectedGoalType?.name || "Select goal type"}
+                  </Text>
+                  <Text style={styles.selectorToggleText}>
+                    {isGoalTypeOpen ? "Hide" : "Show"}
+                  </Text>
+                </Pressable>
+
+                {isGoalTypeOpen ? (
+                  <View style={styles.selectorList}>
+                    {isGoalTypesLoading ? (
+                      <View style={styles.loadingRow}>
+                        <ActivityIndicator size="small" color="#aeb4bd" />
+                      </View>
+                    ) : null}
+
+                    {goalTypeError ? (
+                      <Text style={[styles.errorText, styles.selectorError]}>{goalTypeError}</Text>
+                    ) : null}
+
+                    {goalTypes.map((type) => (
+                      <Pressable
+                        key={type.id}
+                        onPress={() => {
+                          setSelectedGoalType(type);
+                          setIsGoalTypeOpen(false);
+                          setSubmitError(null);
+                        }}
+                        style={styles.selectorItem}
+                      >
+                        <Text style={styles.selectorItemTitle}>{type.name}</Text>
+                        {type.description ? (
+                          <Text style={styles.selectorItemDescription}>{type.description}</Text>
+                        ) : null}
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            {isBibleGoal ? (
+              <>
+                <View style={styles.sectionDivider} />
+
+                <View style={styles.formSection}>
+                  <Text style={styles.sectionTitle}>Read the Bible</Text>
+
+                  <View style={styles.inlineSelector}>
+                    <Pressable
+                      onPress={() => setIsBibleBookOpen((prev) => !prev)}
+                      style={styles.selectorToggle}
+                    >
+                      <Text style={styles.selectorLabel}>
+                        {selectedBibleBook?.name || "Select bible book"}
+                      </Text>
+                      <Text style={styles.selectorToggleText}>
+                        {isBibleBookOpen ? "Hide" : "Show"}
+                      </Text>
+                    </Pressable>
+
+                    {isBibleBookOpen ? (
+                      <View style={styles.selectorList}>
+                        {BIBLE_BOOKS.map((book) => (
+                          <Pressable
+                            key={book.name}
+                            onPress={() => {
+                              setSelectedBibleBook(book);
+                              setIsBibleBookOpen(false);
+                              setSubmitError(null);
+                            }}
+                            style={styles.selectorItem}
+                          >
+                            <Text style={styles.selectorItemTitle}>
+                              {book.name} ({book.chapters} chapters)
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.chapterRow}>
+                    <View style={styles.chapterField}>
+                      <Text style={styles.inputLabel}>From</Text>
+                      <TextInput
+                        value={fromChapter}
+                        onChangeText={handleFromChange}
+                        keyboardType="number-pad"
+                        placeholder="1"
+                        placeholderTextColor="#9aa3ad"
+                        style={styles.input}
+                      />
+                    </View>
+
+                    <View style={styles.chapterField}>
+                      <Text style={styles.inputLabel}>To</Text>
+                      <TextInput
+                        value={toChapter}
+                        onChangeText={handleToChange}
+                        keyboardType="number-pad"
+                        placeholder="1"
+                        placeholderTextColor="#9aa3ad"
+                        style={styles.input}
+                      />
+                    </View>
+                  </View>
+
+                  {selectedBibleBook ? (
+                    <Text style={styles.helperText}>
+                      Chapters range: 1 to {selectedBibleBook.chapters}
+                    </Text>
+                  ) : null}
+                </View>
+              </>
+            ) : null}
+
+            <View style={styles.sectionDivider} />
+
+            <View style={styles.formSection}>
+              <Text style={styles.inputLabel}>Deadline</Text>
+
+              <Pressable
+                onPress={() => setShowDeadlinePicker(true)}
+                style={styles.input}
+              >
+                <Text style={deadline ? styles.inputText : styles.placeholderText}>
+                  {formatDeadlineDisplay(deadline)}
+                </Text>
+              </Pressable>
+
+              <Text style={styles.helperText}>Time is automatically set to 11:59 PM.</Text>
+
+              {showDeadlinePicker ? (
+                <DateTimePicker
+                  value={deadline ?? setEndOfDay(new Date())}
+                  mode="date"
+                  minimumDate={new Date()}
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    if (Platform.OS === "android" && event?.type === "dismissed") {
+                      setShowDeadlinePicker(false);
+                      return;
+                    }
+
+                    if (selectedDate) {
+                      const next = setEndOfDay(selectedDate);
+                      setDeadline(next);
+                      validateDeadline(next);
+                      setSubmitError(null);
+                    }
+
+                    setShowDeadlinePicker(false);
+                  }}
+                />
+              ) : null}
+
+              {deadlineError ? (
+                <Text style={styles.inlineErrorText}>{deadlineError}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.sectionDivider} />
+
+            <View style={styles.formSection}>
+              <Text style={styles.inputLabel}>Title</Text>
+              <TextInput
+                value={title}
+                onChangeText={(text) => {
+                  setTitle(text);
+                  if (submitError) setSubmitError(null);
+                }}
+                placeholder="Goal title"
+                placeholderTextColor="#9aa3ad"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.sectionDivider} />
+
+            <View style={styles.formSection}>
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                value={description}
+                onChangeText={(text) => {
+                  setDescription(text);
+                  if (submitError) setSubmitError(null);
+                }}
+                placeholder="Goal description"
+                placeholderTextColor="#9aa3ad"
+                multiline
+                style={[styles.input, styles.multilineInput]}
+              />
+            </View>
+
+            <View style={styles.sectionDivider} />
+
+            <View style={styles.formSection}>
+              <Text style={styles.inputLabel}>Bounty Amount</Text>
+              <TextInput
+                value={bountyAmount}
+                onChangeText={(text) => {
+                  setBountyAmount(text);
+                  if (submitError) setSubmitError(null);
+                }}
+                placeholder="100"
+                placeholderTextColor="#9aa3ad"
+                keyboardType="number-pad"
+                style={styles.input}
+              />
+            </View>
+          </View>
+
+          {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
+
+          <Pressable
+            style={[
+              styles.submitButton,
+              isSubmitting ? styles.submitButtonDisabled : styles.submitButtonActive,
+            ]}
+            disabled={isSubmitting}
+            onPress={handleSubmit}
+          >
+            <Text style={styles.submitButtonText}>Create Goal</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
