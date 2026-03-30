@@ -7,9 +7,11 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
 import AuthContextProvider from './src/auth/AuthProvider';
-import { DefaultTheme, NavigationContainer, useNavigation } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useContext, useEffect } from 'react';
+
+const navigationRef = createNavigationContainerRef<any>();
 import AuthContext from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 
@@ -44,17 +46,6 @@ function Navigation() {
   const auth = useContext(AuthContext);
   const user = auth?.isLoggedIn ?? false;
   const isAuthBootstrapping = auth?.isAuthBootstrapping ?? true;
-  const navigation = useNavigation<any>();
-
-  useEffect(() => {
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      if (url.startsWith('goalstudio://verify-email')) {
-        const token = url.split('token=')[1];
-        navigation.navigate('VerifyEmail', { token });
-      }
-    });
-    return () => subscription.remove();
-  }, []);
 
   if (isAuthBootstrapping) {
     return (
@@ -111,6 +102,15 @@ function Navigation() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (url.startsWith('goalstudio://verify-email') && navigationRef.isReady()) {
+        const token = url.split('token=')[1];
+        navigationRef.navigate('VerifyEmail', { token });
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
     <SafeAreaProvider>
@@ -120,7 +120,7 @@ export default function App() {
       />
       <AuthContextProvider>
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-          <NavigationContainer linking={linking} theme={navTheme} fallback={<ActivityIndicator size="large" color="#aeb4bd" />}>
+          <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme} fallback={<ActivityIndicator size="large" color="#aeb4bd" />}>
             <Navigation />
           </NavigationContainer>
         </StripeProvider>
