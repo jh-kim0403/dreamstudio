@@ -1,171 +1,249 @@
-import { Input, Icon, Button } from '@rneui/base';
-import React, { useContext, useState } from 'react';
-import { View, Text } from 'react-native';
-import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
+import React, { useContext, useState, useRef, useCallback } from 'react';
+import { View, Text, Animated, Pressable } from 'react-native';
+import { Input, Icon } from '@rneui/base';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+
 import AuthContext from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { styles } from "../styles/LoginScreen.styles";
+import { styles, iconProps } from '../styles/LoginScreen.styles';
 
 type LoginResponse = {
-    user_id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    access_token: string;
-    refresh_token: string;
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  access_token: string;
+  refresh_token: string;
 };
 
 const LoginScreen = () => {
-    const auth = useContext(AuthContext);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isInProgress, setIsInProgress] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const navigation = useNavigation();
-    const route = useRoute();
-    const successMessage = (route.params as any)?.successMessage ?? null;
+  const auth = useContext(AuthContext);
+  const navigation = useNavigation();
+  const route = useRoute();
 
-    const isSuccessResponse = (response: any): response is { data: any } => {
-        return response && response.data;
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isInProgress, setIsInProgress] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const successMessage = (route.params as any)?.successMessage ?? null;
+
+  const isSuccessResponse = (response: any): response is { data: any } => {
+    return response && response.data;
+  };
+
+  const isErrorWithCode = (error: any): error is { code: string } => {
+    return error && typeof error.code === 'string';
+  };
+
+  const handleAuthResponse = async (data: LoginResponse) => {
+    if (!auth) {
+      throw new Error('AuthContext not available');
     }
-    const isErrorWithCode = (error: any): error is { code: string } => {
-        return error && typeof error.code === 'string';
+    await auth.login(data);
+  };
+
+  const clearError = useCallback(() => {
+    setErrorMessage(null);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setErrorMessage(null);
+    }, [])
+  );
+
+  const loginScale = useRef(new Animated.Value(1)).current;
+  const signUpScale = useRef(new Animated.Value(1)).current;
+
+  const animateIn = (value: Animated.Value) => {
+    Animated.spring(value, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 0,
+    }).start();
+  };
+
+  const animateOut = (value: Animated.Value) => {
+    Animated.spring(value, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 24,
+      bounciness: 6,
+    }).start();
+  };
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage('Invalid Email/PW');
+      return;
     }
-    
-    const handleAuthResponse = async (data: LoginResponse) => {
-        if (!auth) {
-            throw new Error('AuthContext not available');
-        }
-        await auth.login(data);
-    };
 
-    const handleLogin = async () => {
-        setIsInProgress(true);
-        setErrorMessage(null);
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/manual/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            if (!response.ok) {
-                const err = await response.json().catch(() => null);
-                throw new Error(err?.detail || 'Login failed');
-            }
-            const data: LoginResponse = await response.json();
-            await handleAuthResponse(data);
-        } catch (error: any) {
-            setErrorMessage(error?.message ?? 'Login failed');
-        } finally {
-            setIsInProgress(false);
-        }
-    };
+    setIsInProgress(true);
+    setErrorMessage(null);
 
-    const googleSignIn = async () => {
-        setIsInProgress(true);
-        setErrorMessage(null);
-        try {
-            await GoogleSignin.hasPlayServices();
-            const response = await GoogleSignin.signIn();
-            if (!isSuccessResponse(response)) {
-                return;
-            }
-            const idToken = response.data?.idToken;
-            if (!idToken) {
-                throw new Error('Missing Google id token');
-            }
-            const apiResponse = await fetch(`${API_BASE_URL}/auth/google/signup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_token: idToken }),
-            });
-            if (!apiResponse.ok) {
-                const err = await apiResponse.json().catch(() => null);
-                throw new Error(err?.detail || 'Google login failed');
-            }
-            const data: LoginResponse = await apiResponse.json();
-            await handleAuthResponse(data);
-        } catch (error) {
-            if (isErrorWithCode(error)) {
-                switch (error.code) {
-                    case statusCodes.IN_PROGRESS:
-                        // operation (eg. sign in) already in progress
-                        break;
-                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                        // Android only, play services not available or outdated
-                        break;
-                    default:
-                        console.error(" An error occurred during Google sign in", error);
-                }
-            } else {
-                // an error that's not related to google sign in occurred
-                console.error(" An unknown error occurred during Google sign in", error);
-            }
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/manual/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Invalid Email/PW');
+      }
+
+      const data: LoginResponse = await response.json();
+      await handleAuthResponse(data);
+    } catch (error: any) {
+      setErrorMessage('Invalid Email/PW');
+    } finally {
+      setIsInProgress(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsInProgress(true);
+    setErrorMessage(null);
+
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      if (!isSuccessResponse(response)) {
+        throw new Error('Google sign-in failed');
+      }
+
+      const idToken = response.data?.idToken;
+      if (!idToken) {
+        throw new Error('Missing Google ID token');
+      }
+
+      const apiResponse = await fetch(`${API_BASE_URL}/auth/google/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+
+      if (!apiResponse.ok) {
+        const err = await apiResponse.json().catch(() => null);
+        throw new Error(err?.detail || 'Google login failed');
+      }
+
+      const data: LoginResponse = await apiResponse.json();
+      await handleAuthResponse(data);
+    } catch (error: any) {
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.IN_PROGRESS:
+            setErrorMessage('Google sign-in is already in progress.');
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            setErrorMessage('Google Play Services is not available.');
+            break;
+          default:
             setErrorMessage('Google sign-in failed');
-        } finally {
-            setIsInProgress(false);
+            console.error('Google sign-in error:', error);
         }
-    };
+      } else {
+        setErrorMessage(error?.message ?? 'Google sign-in failed');
+        console.error('Unknown Google sign-in error:', error);
+      }
+    } finally {
+      setIsInProgress(false);
+    }
+  };
 
-    return (
-        <View style={styles.container}>
+  return (
+    <View style={styles.container}>
+      <View style={styles.contentWrapper}>
+        <Text style={styles.title}>Welcome Back</Text>
 
-            <Input
-                inputMode="email"
-                placeholder='Email Address'
-                value={email}
-                onChangeText={setEmail}
-                leftIcon={
-                    <Icon
-                        name='email'
-                        type='material'
-                        size={36}
-                        color='black'
-                    />
-                }
-            />
-            <Input
-                placeholder='Password'
-                secureTextEntry={true}
-                value={password}
-                onChangeText={setPassword}
-                leftIcon={
-                    <Icon
-                        name='lock'
-                        type='material'
-                        size={36}
-                        color='black'
-                    />
-                }
-            />
-            <Button title="Login" onPress={handleLogin} disabled={isInProgress} />
+        <Input
+          inputMode="email"
+          placeholder="Email Address"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            clearError();
+          }}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          containerStyle={styles.inputContainer}
+          inputContainerStyle={styles.inputInnerContainer}
+          leftIcon={<Icon {...iconProps.email} />}
+          placeholderTextColor="#9aa3ad"
+          inputStyle={{ color: '#f3f4f6', fontSize: 16 }}
+        />
 
-            {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
-            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-            
+        <Input
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            clearError();
+          }}
+          autoCapitalize="none"
+          containerStyle={styles.inputContainer}
+          inputContainerStyle={styles.inputInnerContainer}
+          leftIcon={<Icon {...iconProps.password} />}
+          placeholderTextColor="#9aa3ad"
+          inputStyle={{ color: '#f3f4f6', fontSize: 16 }}
+        />
 
-            <View style={styles.signUpButtonContainer}>
-                <Button
-                    title="Sign Up"
-                    onPress={() => {
-                        // @ts-expect-error: app-wide nav types not yet defined
-                        navigation.navigate('SignUp');
-                    }}
-                    disabled={isInProgress}
-                />
-            </View>
-        </View>
+        {successMessage ? (
+          <Text style={styles.successText}>{successMessage}</Text>
+        ) : null}
 
-    );
-}
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
+
+        <Animated.View
+          style={[
+            styles.primaryButtonContainer,
+            { transform: [{ scale: loginScale }] },
+          ]}
+        >
+          <Pressable
+            onPressIn={() => animateIn(loginScale)}
+            onPressOut={() => animateOut(loginScale)}
+            onPress={handleLogin}
+            disabled={isInProgress}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.primaryButtonText}>Login</Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.signUpButtonContainer,
+            { transform: [{ scale: signUpScale }] },
+          ]}
+        >
+          <Pressable
+            onPressIn={() => animateIn(signUpScale)}
+            onPressOut={() => animateOut(signUpScale)}
+            onPress={() => {
+              // @ts-expect-error app-wide navigation types not defined yet
+              navigation.navigate('SignUp');
+            }}
+            disabled={isInProgress}
+            style={styles.secondaryButton}
+          >
+            <Text style={styles.secondaryButtonText}>Sign Up</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
+    </View>
+  );
+};
 
 export default LoginScreen;
-/*
-<GoogleSigninButton
-size={GoogleSigninButton.Size.Wide}
-color={GoogleSigninButton.Color.Dark}
-onPress={googleSignIn}
-disabled={isInProgress}
-/>
-*/
