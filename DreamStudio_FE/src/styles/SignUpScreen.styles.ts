@@ -9,24 +9,28 @@ const COLORS = {
   background: '#1f1f1f',
   surfaceInput: '#2a2f36',
   surfacePrimary: '#5d6976',
-  surfaceSecondary: '#43505c',
   borderSoft: 'rgba(255, 255, 255, 0.30)',
   textPrimary: '#f3f4f6',
   textSecondary: '#aeb4bd',
   inputText: '#f3f4f6',
   placeholder: '#9aa3ad',
   icon: '#b3bac4',
-  success: '#63d29a',
   danger: '#ff8c96',
 };
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+
+  screenInner: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 22,
-    paddingTop: isTablet ? height * 0.12 : height * 0.09,
+    paddingTop: isTablet ? height * 0.08 : height * 0.06,
+    paddingBottom: isTablet ? height * 0.06 : 28,
   },
 
   contentWrapper: {
@@ -39,7 +43,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
-    marginBottom: 70,
+    marginBottom: 10,
     letterSpacing: 0.2,
   },
 
@@ -66,15 +70,34 @@ export const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 18 : 16,
 
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: isTablet ? 8 : 7 },
-    shadowOpacity: 0.18,
-    shadowRadius: isTablet ? 12 : 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  inputText: {
+    color: COLORS.inputText,
+    fontSize: isTablet ? 17 : 16,
+    marginLeft: 8,
+  },
+
+  placeholderColor: {
+    color: COLORS.placeholder,
+  },
+
+  errorText: {
+    width: '100%',
+    color: COLORS.danger,
+    marginTop: 10,
+    marginBottom: 8,
+    fontSize: isTablet ? 15 : 14,
+    textAlign: 'center',
   },
 
   primaryButtonContainer: {
     width: '100%',
-    marginTop: 70,
+    marginTop: 20,
     marginBottom: 10,
   },
 
@@ -95,70 +118,37 @@ export const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  primaryButtonDisabled: {
+    backgroundColor: COLORS.surfacePrimary,
+    opacity: 0.6,
+  },
+
   primaryButtonText: {
     fontWeight: '600',
     color: '#f3f4f6',
     fontSize: isTablet ? 18 : 17,
   },
-
-  signUpButtonContainer: {
-    width: '100%',
-    marginTop: 2,
-  },
-
-  secondaryButton: {
-    width: '100%',
-    minHeight: isTablet ? 60 : 54,
-    borderRadius: isTablet ? 20 : 18,
-    backgroundColor: COLORS.surfaceSecondary,
-    borderWidth: 0.3,
-    borderColor: COLORS.borderSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: isTablet ? 7 : 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: isTablet ? 10 : 8,
-    elevation: 2,
-  },
-
-  secondaryButtonText: {
-    fontWeight: '600',
-    color: '#dde2e8',
-    fontSize: isTablet ? 18 : 17,
-  },
-
-  successText: {
-    width: '100%',
-    color: COLORS.success,
-    marginTop: 10,
-    marginBottom: 8,
-    fontSize: isTablet ? 15 : 14,
-    textAlign: 'center',
-  },
-
-  errorText: {
-    width: '100%',
-    color: COLORS.danger,
-    marginTop: 1,
-    marginBottom: 1,
-    fontSize: isTablet ? 15 : 14,
-    textAlign: 'center',
-  },
 });
 
 export const iconProps = {
+  person: {
+    name: 'person' as const,
+    type: 'material' as const,
+    size: isTablet ? 22 : 21,
+    color: COLORS.icon,
+  },
   email: {
     name: 'email' as const,
     type: 'material' as const,
     size: isTablet ? 22 : 21,
-    color: '#b3bac4',
+    color: COLORS.icon,
   },
   password: {
     name: 'lock' as const,
     type: 'material' as const,
     size: isTablet ? 22 : 21,
-    color: '#b3bac4',
+    color: COLORS.icon,
   },
 };
+
+export default styles;

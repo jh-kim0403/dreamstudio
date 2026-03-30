@@ -3,7 +3,7 @@ from src.celery_app import celery_app
 from src.helpers.db import SessionLocal
 from src.helpers.s3 import presign_get
 from src.helpers.openai import evaluate_photo
-from src.helpers.verification_utils import get_photo_verification_record, serper_image_search, hash_image, compare_image
+from src.helpers.verification_utils import get_photo_verification_record, serp_image_search, hash_image, compare_image
 
 
 @celery_app.task(bind=True, max_retries=0, default_retry_delay=20)
@@ -32,34 +32,40 @@ def evaluate_photo_verification(self, verification_id: str):
         verification, photo, goal, goal_type = get_photo_verification_record(db, verification_id)
 
         goal_image_url = presign_get(photo.s3_key, expires_seconds=300)
+        """
+        serper_result = serp_image_search(goal_image_url)
+        logging.info("Serper Result")
+        logging.info(serper_result)
+        exact_matches = serper_result.get("exact_matches")
+        logging.info("Link: %s", exact_matches[0]["thumbnail"])
         
-        serper_result = serper_image_search(goal_image_url)
-        exact_matches = serper_result.get("exactMatches")
-        
-
-        if exact_matches and compare_image(hash_image(goal_image_url), hash_image(exact_matches[0]["link"])):
+        if exact_matches and compare_image(hash_image(goal_image_url), hash_image(exact_matches[0]["thumbnail"])):
+            logging.info("submitted image is an image taken from online")
             verification.result = "rejected"
             goal.verification_status = "failed"
             goal.status = "pending"
         else:
-            result = evaluate_photo(prompt=goal_type.gpt_prompt, image_url=goal_image_url)
-            if result.is_true:
-                verification.result = "approved"
-                goal.verification_status = "completed"
-                goal.status = "validating"
-            else:
-                verification.result = "rejected"
-                goal.verification_status = "failed"
-                goal.status = "pending"
+        
+            logging.info("Submitting image to openai for evaluation")
+            """
+        result = evaluate_photo(prompt=goal_type.gpt_prompt, image_url=goal_image_url)
+        if result.is_true:
+            verification.result = "approved"
+            goal.verification_status = "completed"
+            goal.status = "validating"
+        else:
+            verification.result = "rejected"
+            goal.verification_status = "failed"
+            goal.status = "pending"
 
-            meta = dict(photo.meta or {})
-            meta["ai_check"] = {
-                "is_true": result.is_true,
-                "prob_true": result.prob_true,
-                "prob_false": result.prob_false,
-                "reason": result.reason,
-            }
-            photo.meta = meta
+        meta = dict(photo.meta or {})
+        meta["ai_check"] = {
+            "is_true": result.is_true,
+            "prob_true": result.prob_true,
+            "prob_false": result.prob_false,
+            "reason": result.reason,
+        }
+        photo.meta = meta
         db.commit()
         logging.info("Successfully evaluated photo for verification: %s", verification_id)
         return {"verification_id": verification_id, "result": verification.result}
