@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import AuthContext from "../context/AuthContext";
@@ -28,24 +28,28 @@ type Goal = {
   verification_updated_at?: string;
 };
 
+type UserProfile = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  bounty_amount?: number;
+  bounty_balance?: number;
+};
+
 const getGoalDateValue = (goal: Goal): number => {
   const raw = goal.deadline || goal.created_at || goal.updated_at;
-  if (!raw) {
-    return 0;
-  }
+  if (!raw) return 0;
   const parsed = Date.parse(raw);
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const formatGoalDate = (goal: Goal): string | null => {
   const raw = goal.deadline || goal.created_at || goal.updated_at;
-  if (!raw) {
-    return null;
-  }
+  if (!raw) return null;
+
   const parsed = Date.parse(raw);
-  if (Number.isNaN(parsed)) {
-    return raw;
-  }
+  if (Number.isNaN(parsed)) return raw;
+
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "2-digit",
@@ -73,165 +77,256 @@ const shouldShowVerifyButton = (goal: Goal): boolean => {
   return isQuizReady || isFreshPhotoGoal || isExistingPhotoGoal;
 };
 
+const formatBountyAmount = (value: number): string => {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
 export default function HomeScreen() {
   const auth = useContext(AuthContext);
   const token = auth?.token ?? null;
   const authFetch = auth?.authFetch;
   const navigation = useNavigation();
+
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
 
-  const fetchGoals = async (isRefresh = false) => {
-    if (!token) {
-      return;
-    }
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setErrorMessage(null);
+  const fetchGoals = useCallback(
+    async (isRefresh = false) => {
+      if (!token) return;
+
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      setErrorMessage(null);
+
+      try {
+        const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/getcurrentgoals`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load goals");
+        }
+
+        const data = await response.json();
+        const normalized = Array.isArray(data) ? data : data?.data ?? [];
+        setGoals(normalized);
+      } catch (error: any) {
+        setErrorMessage("Failed to load goals");
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [token, authFetch]
+  );
+
+  const fetchProfile = useCallback(async () => {
+    if (!token) return;
+
+    setIsProfileLoading(true);
+
     try {
-      const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/getcurrentgoals`, {
+      const response = await (authFetch ?? fetch)(`${API_BASE_URL}/user/profile`, {
         headers: {
           "Content-Type": "application/json",
         },
       });
+
       if (!response.ok) {
-        const err = await response.json().catch(() => null);
-        throw new Error(err?.detail || "Failed to load goals");
+        throw new Error("Failed to load profile");
       }
+
       const data = await response.json();
-      const normalized = Array.isArray(data) ? data : data?.data ?? [];
-      setGoals(normalized);
-    } catch (error: any) {
-      setErrorMessage(error?.message ?? "Failed to load goals");
+      setProfile(data);
+    } catch (error) {
+      console.error("Failed to load profile", error);
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      setIsProfileLoading(false);
     }
-  };
+  }, [token, authFetch]);
 
   useEffect(() => {
     void fetchGoals(false);
-  }, [token]);
+    void fetchProfile();
+  }, [fetchGoals, fetchProfile]);
 
   const sortedGoals = useMemo(() => {
     return [...goals].sort((a, b) => getGoalDateValue(a) - getGoalDateValue(b));
   }, [goals]);
 
+  const firstName = profile?.first_name?.trim() || "Dream";
+  const lastName = profile?.last_name?.trim() || "Studio";
+  const bountyValue = profile?.bounty_amount ?? profile?.bounty_balance ?? 0;
+
   if (!token) {
     return (
       <View style={styles.missingTokenContainer}>
-        <Text>Missing access token. Please log in again.</Text>
+        <Text style={styles.missingTokenText}>Missing access token. Please log in again.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.navCard}>
-        <TouchableOpacity
-          onPress={() => setIsNavCollapsed((prev) => !prev)}
-          style={styles.navToggle}
-        >
-          <Text style={styles.navTitle}>Navigation</Text>
-          <Text style={styles.navToggleLabel}>{isNavCollapsed ? "Show" : "Hide"}</Text>
-        </TouchableOpacity>
-        {!isNavCollapsed ? (
-          <View style={styles.navLinks}>
-            <Text style={styles.navLinkText}>Home</Text>
-            <TouchableOpacity
-              onPress={() => {
-                // @ts-expect-error: app-wide nav types not yet defined
-                navigation.navigate("PastGoals");
-              }}
-            >
-              <Text style={styles.navLinkText}>Past Goals</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+      <View style={styles.contentWrapper}>
+        <View style={styles.profileCard}>
+          <View style={styles.profileTopRow}>
+            <View style={styles.nameBlock}>
+              <Text style={styles.nameLine}>{firstName},</Text>
+              <Text style={styles.nameLine}>{lastName}</Text>
+            </View>
+
+            <View style={styles.bountyBlock}>
+              <Text style={styles.bountyLabel}>Bounty</Text>
+              {isProfileLoading ? (
+                <ActivityIndicator size="small" color="#aeb4bd" />
+              ) : (
+                <Text style={styles.bountyValue}>${formatBountyAmount(bountyValue)}</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.profileActionRow}>
+            <Pressable
+              style={styles.logoutLink}
+                onPress={async () => {
+                  await auth?.logout?.();
+                }}
+              >
+                {({ pressed }) => (
+                  <Text
+                    style={[
+                      styles.logoutLinkText,
+                      pressed && styles.logoutLinkTextPressed,
+                    ]}
+                  >
+                    Log out
+                  </Text>
+                )}
+            </Pressable>
+
+            <Pressable
+              style={styles.fundsLink}
               onPress={() => {
                 // @ts-expect-error: app-wide nav types not yet defined
                 navigation.navigate("PurchaseBountyAndWithdrawl");
               }}
             >
-              <Text style={styles.navLinkText}>Purchase Bounty & Withdrawl</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              <Text style={styles.fundsLinkText}>Deposit & Withdraw</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.goalsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.heading}>Current Goals</Text>
+            <Text style={styles.goalCountText}>
+              {sortedGoals.length} {sortedGoals.length === 1 ? "goal" : "goals"}
+            </Text>
+          </View>
+
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#aeb4bd" style={styles.loadingIndicator} />
+          ) : null}
+
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+          <FlatList
+            data={sortedGoals}
+            keyExtractor={(item, index) => String(item.id ?? index)}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <View style={styles.goalItem}>
+                <View style={styles.goalHeader}>
+                  <Text style={styles.goalTitle}>{item.title || item.name || "Untitled Goal"}</Text>
+
+                  {item.verification_type === "quiz" &&
+                  (item.quiz_question_status === "pending" ||
+                    item.quiz_question_status === "none") ? (
+                    <Text style={styles.pendingQuizText}>Quiz being created</Text>
+                  ) : shouldShowVerifyButton(item) ? (
+                    <Pressable
+                      style={styles.verifyButton}
+                      onPress={() => {
+                        // @ts-expect-error: app-wide nav types not yet defined
+                        navigation.navigate("Verification", {
+                          goalId: item.id,
+                          goalTypeId: item.goal_type_id,
+                          goalVerificationType: item.verification_type,
+                        });
+                      }}
+                    >
+                      <Text style={styles.verifyButtonText}>Verify</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+
+                {item.verification_result === "approved" ? (
+                  <Text style={styles.approvedText}>Completed</Text>
+                ) : item.verification_result === "rejected" ? (
+                  <Text style={styles.rejectedText}>Failed - last submission</Text>
+                ) : null}
+
+                {item.description ? (
+                  <Text style={styles.descriptionText} numberOfLines={3}>
+                    {item.description}
+                  </Text>
+                ) : null}
+
+                {item.deadline || item.created_at || item.updated_at ? (
+                  <Text style={styles.dateText}>{formatGoalDate(item)}</Text>
+                ) : null}
+              </View>
+            )}
+            ListEmptyComponent={
+              !isLoading ? <Text style={styles.emptyText}>No goals yet.</Text> : null
+            }
+            refreshing={isRefreshing}
+            onRefresh={() => {
+              void fetchGoals(true);
+              void fetchProfile();
+            }}
+          />
+        </View>
+
+        <View style={styles.bottomActionSection}>
+          <View style={styles.actionRow}>
+            <Pressable
+              style={[styles.actionButton, styles.primaryActionButton]}
               onPress={() => {
                 // @ts-expect-error: app-wide nav types not yet defined
-                navigation.navigate("Profile");
+                navigation.navigate("AddNewGoal");
               }}
             >
-              <Text style={styles.navLinkText}>Profile</Text>
-            </TouchableOpacity>
+              <Text style={styles.primaryActionText}>Add New Goal</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.actionButton, styles.secondaryActionButton]}
+              onPress={() => {
+                // @ts-expect-error: app-wide nav types not yet defined
+                navigation.navigate("PastGoals");
+              }}
+            >
+              <Text style={styles.secondaryActionText}>Past Goals</Text>
+            </Pressable>
           </View>
-        ) : null}
+        </View>
       </View>
-
-      <TouchableOpacity
-        style={styles.addGoalButton}
-        onPress={() => {
-          // @ts-expect-error: app-wide nav types not yet defined
-          navigation.navigate("AddNewGoal");
-        }}
-      >
-        <Text style={styles.primaryButtonText}>Add new goal</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.heading}>Current Goals</Text>
-      {isLoading ? <ActivityIndicator size="large" /> : null}
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-      <FlatList
-        data={sortedGoals}
-        keyExtractor={(item, index) => String(item.id ?? index)}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.goalItem}>
-            <View style={styles.goalHeader}>
-              <Text style={styles.goalTitle}>{item.title || item.name || "Untitled Goal"}</Text>
-              {item.verification_type === "quiz" &&
-              (item.quiz_question_status === "pending" ||
-                item.quiz_question_status === "none") ? (
-                <Text style={styles.pendingQuizText}>Quiz being created</Text>
-              ) : shouldShowVerifyButton(item) ? (
-                <TouchableOpacity
-                  style={styles.verifyButton}
-                  onPress={() => {
-                    // @ts-expect-error: app-wide nav types not yet defined
-                    navigation.navigate("Verification", {
-                      goalId: item.id,
-                      goalTypeId: item.goal_type_id,
-                      goalVerificationType: item.verification_type,
-                    });
-                  }}
-                >
-                  <Text style={styles.primaryButtonText}>Verify</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            {item.verification_result === "approved" ? (
-              <Text style={styles.approvedText}>Completed</Text>
-            ) : item.verification_result === "rejected" ? (
-              <Text style={styles.rejectedText}>Failed - last submission</Text>
-            ) : null}
-            {item.description ? (
-              <Text style={styles.descriptionText}>{item.description}</Text>
-            ) : null}
-            {(item.deadline || item.created_at || item.updated_at) ? (
-              <Text style={styles.dateText}>{formatGoalDate(item)}</Text>
-            ) : null}
-          </View>
-        )}
-        ListEmptyComponent={!isLoading ? <Text>No goals yet.</Text> : null}
-        refreshing={isRefreshing}
-        onRefresh={() => {
-          void fetchGoals(true);
-        }}
-      />
     </View>
   );
 }
