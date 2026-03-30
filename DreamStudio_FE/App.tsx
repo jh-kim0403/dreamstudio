@@ -1,4 +1,4 @@
-import { ActivityIndicator, Linking, StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context';
@@ -9,7 +9,7 @@ import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
 import AuthContextProvider from './src/auth/AuthProvider';
 import { DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 
 const navigationRef = createNavigationContainerRef<any>();
 import AuthContext from './src/context/AuthContext';
@@ -102,19 +102,6 @@ function Navigation() {
 }
 
 export default function App() {
-  useEffect(() => {
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      console.log('Linking event fired:', url);
-      console.log('navigationRef ready:', navigationRef.isReady());
-      if (url.startsWith('goalstudio://verify-email') && navigationRef.isReady()) {
-        const token = url.split('token=')[1];
-        console.log('Navigating to VerifyEmail with token:', token);
-        navigationRef.navigate('VerifyEmail', { token });
-      }
-    });
-    return () => subscription.remove();
-  }, []);
-
   return (
     <SafeAreaProvider>
       <StatusBar
