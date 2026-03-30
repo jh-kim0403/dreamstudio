@@ -1,4 +1,4 @@
-import { ActivityIndicator, StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Linking, StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
 import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context';
@@ -7,9 +7,9 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
 import AuthContextProvider from './src/auth/AuthProvider';
-import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import AuthContext from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 
@@ -44,6 +44,17 @@ function Navigation() {
   const auth = useContext(AuthContext);
   const user = auth?.isLoggedIn ?? false;
   const isAuthBootstrapping = auth?.isAuthBootstrapping ?? true;
+  const navigation = useNavigation<any>();
+
+  useEffect(() => {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (url.startsWith('goalstudio://verify-email')) {
+        const token = url.split('token=')[1];
+        navigation.navigate('VerifyEmail', { token });
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   if (isAuthBootstrapping) {
     return (
@@ -109,7 +120,7 @@ export default function App() {
       />
       <AuthContextProvider>
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-          <NavigationContainer linking={linking} theme={navTheme}>
+          <NavigationContainer linking={linking} theme={navTheme} fallback={<ActivityIndicator size="large" color="#aeb4bd" />}>
             <Navigation />
           </NavigationContainer>
         </StripeProvider>
