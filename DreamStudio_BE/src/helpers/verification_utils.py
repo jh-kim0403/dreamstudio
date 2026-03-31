@@ -1,3 +1,5 @@
+import logging
+
 from src.models import verifications_schemas, goal_schemas, auth_schemas
 from src.models.verifications_models import UserSubmission
 from sqlalchemy.orm import Session
@@ -132,18 +134,18 @@ def get_photo_verification_record(
 
     return verification, photo, goal, goal_type
 
-def serper_image_search(image_url: str) -> dict:
+def serp_image_search(image_url: str) -> dict:
     try:
         return reverse_image_search(image_url=image_url)
     except SerperError as exc:
-        message = str(exc)
-        status_code = 500 if "not configured" in message else 502
-        raise HTTPException(status_code=status_code, detail=message)
+        raise ValueError(str(exc)) from exc
     
 
-def compare_image(user_submitted_image, serper_found_image) -> bool:
-    distance = user_submitted_image - serper_found_image  # Hamming distance
+def compare_image(user_submitted_image, serp_found_image) -> bool:
+    distance = user_submitted_image - serp_found_image  # Hamming distance
     is_similar = distance <= DISTANCE_THRESHHOLD  # threshold: 0 = identical, ~10 = very similar
+    logging.info("distance %s", distance)
+    logging.info(is_similar)
     return is_similar
 
 def hash_image(image_url: str) -> imagehash.ImageHash:

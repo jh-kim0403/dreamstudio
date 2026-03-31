@@ -1,4 +1,4 @@
-import { ActivityIndicator, StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context';
@@ -7,9 +7,11 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import VerifyEmailScreen from './src/screens/VerifyEmailScreen';
 import AuthenticatedScreens from './src/screens/AuthenticatedScreens';
 import AuthContextProvider from './src/auth/AuthProvider';
-import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useContext } from 'react';
+
+const navigationRef = createNavigationContainerRef<any>();
 import AuthContext from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 
@@ -100,7 +102,6 @@ function Navigation() {
 }
 
 export default function App() {
-
   return (
     <SafeAreaProvider>
       <StatusBar
@@ -109,7 +110,7 @@ export default function App() {
       />
       <AuthContextProvider>
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-          <NavigationContainer linking={linking} theme={navTheme}>
+          <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme} fallback={<ActivityIndicator size="large" color="#aeb4bd" />}>
             <Navigation />
           </NavigationContainer>
         </StripeProvider>

@@ -38,8 +38,8 @@ class Settings(BaseSettings):
         "https://api.openai.com/v1/organization/costs",
         alias="OPENAI_COSTS_API_URL",
     )
-    serper_api_key: Optional[str] = Field(None, alias="SERPER_API_KEY")
-    serper_base_url: str = Field("https://google.serper.dev", alias="SERPER_BASE_URL")
+    serp_api_key: Optional[str] = Field(None, alias="SERP_API_KEY")
+    serp_base_url: str = Field("https://serpapi.com/search.json", alias="SERP_BASE_URL")
 
     celery_redis_url: str = Field(..., alias="CELERY_REDIS_URL")
     slowapi_redis_url: str = Field(..., alias="SLOWAPI_REDIS_URL")

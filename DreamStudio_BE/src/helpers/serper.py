@@ -1,33 +1,35 @@
-import requests
+import logging
 
+import requests
 from src.config import settings
 
-SERPER_PATH = "/images"
+SERP_SEARCH_PATH = "/search.json"
 DEFAULT_TIMEOUT_SECONDS = 20
+LENS_ENGINE = "google_lens"
 _session = requests.Session()
-
+SERP_API_KEY = settings.serp_api_key
+SERP_BASE_URL = settings.serp_base_url
 
 class SerperError(Exception):
     pass
 
 
-def _serper_url() -> str:
-    return f"{settings.serper_base_url.rstrip('/')}{SERPER_PATH}"
-
+def _serp_url() -> str:
+    return f"{SERP_BASE_URL.rstrip('/')}{SERP_SEARCH_PATH}"
 
 def reverse_image_search(image_url: str, timeout: int = DEFAULT_TIMEOUT_SECONDS) -> dict:
-    if not settings.serper_api_key:
-        raise SerperError("SERPER_API_KEY is not configured")
+    if not SERP_API_KEY:
+        raise SerperError("SERP_API_KEY is not configured")
 
     try:
-        response = _session.post(
-            _serper_url(),
-            headers={
-                "X-API-KEY": settings.serper_api_key,
-                "Content-Type": "application/json",
-            },
-            json={"imageUrl": image_url},
-            timeout=timeout,
+        response = _session.get(
+            _serp_url(),
+            params={
+                "engine": LENS_ENGINE,
+                "url": image_url,
+                "type": "exact_matches",
+                "api_key": SERP_API_KEY
+            }
         )
         response.raise_for_status()
     except requests.RequestException as exc:
