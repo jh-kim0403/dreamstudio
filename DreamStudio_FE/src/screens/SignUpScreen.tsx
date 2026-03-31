@@ -4,7 +4,7 @@ import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import { GoogleSigninButton, statusCodes, GoogleSignin } from '@react-native-google-signin/google-signin';
 import AuthContext from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { CommonActions, useNavigation, useFocusEffect } from '@react-navigation/native';
 import styles, { iconProps } from '../styles/SignUpScreen.styles';
 
 type LoginResponse = {
@@ -72,10 +72,19 @@ const handleManualSignup = async () => {
         throw new Error('Invalid input');
         }
 
-        // @ts-expect-error: app-wide nav types not yet defined
-        navigation.navigate('Login', {
-        successMessage: 'Sign up successful. Please verify your email.',
-        });
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'Login',
+                params: {
+                  successMessage: 'Sign up successful. Please verify your email.',
+                },
+              },
+            ],
+          })
+        );
     } catch (error: any) {
         setErrorMessage('Invalid input');
     } finally {
