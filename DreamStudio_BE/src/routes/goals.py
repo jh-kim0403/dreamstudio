@@ -83,3 +83,5 @@ def get_goal_types(request: Request, user_id: UUID = Depends(validate_access_tok
 def get_current_goals(request: Request, user_id: UUID = Depends(validate_access_token), db: Session = Depends(get_db)):
     all_goals = current_goals_for_user(user_id, db)
     return [goal_models.currentGoalResponse.model_validate(r._mapping) for r in all_goals]
+
+

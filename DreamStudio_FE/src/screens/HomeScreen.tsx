@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import AuthContext from "../context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
+import {useNavigation } from "@react-navigation/native";
 import { API_BASE_URL } from "../config/api";
 import { styles } from "../styles/HomeScreen.styles";
 
@@ -23,6 +23,7 @@ type Goal = {
   quiz_question_status?: string;
   verification_status?: string;
   goal_type_id?: string;
+  goal_type_name?: string;
   verification_type?: string;
   verification_result?: string;
   verification_updated_at?: string;
@@ -32,7 +33,6 @@ type UserProfile = {
   first_name?: string;
   last_name?: string;
   email?: string;
-  bounty_amount?: number;
   bounty_balance?: number;
 };
 
@@ -63,7 +63,8 @@ const shouldShowVerifyButton = (goal: Goal): boolean => {
   const isQuizReady =
     goal.verification_type === "quiz" &&
     goal.quiz_question_status === "created" &&
-    goal.verification_result !== "approved";
+    goal.verification_result !== "approved" &&
+    goal.verification_result !== "rejected";
 
   const isFreshPhotoGoal =
     goal.verification_type == null &&
@@ -72,7 +73,8 @@ const shouldShowVerifyButton = (goal: Goal): boolean => {
 
   const isExistingPhotoGoal =
     goal.verification_type === "photo" &&
-    goal.verification_result !== "approved";
+    goal.verification_result !== "approved" &&
+    goal.verification_result !== "rejected";
 
   return isQuizReady || isFreshPhotoGoal || isExistingPhotoGoal;
 };
@@ -97,7 +99,42 @@ export default function HomeScreen() {
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const fetchGoals = useCallback(
+  const fetchGoals = useCallback(async () => {
+    if (!token) return;
+
+    const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/getcurrentgoals`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to load goals");
+    }
+
+    const data = await response.json();
+    const normalized = Array.isArray(data) ? data : data?.data ?? [];
+    setGoals(normalized);
+  }, [token, authFetch]);
+
+  const fetchProfile = useCallback(async () => {
+    if (!token) return;
+
+    const response = await (authFetch ?? fetch)(`${API_BASE_URL}/user/profile`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to load profile");
+    }
+
+    const data = await response.json();
+    setProfile(data);
+  }, [token, authFetch]);
+
+  const reloadHome = useCallback(
     async (isRefresh = false) => {
       if (!token) return;
 
@@ -107,61 +144,26 @@ export default function HomeScreen() {
         setIsLoading(true);
       }
 
+      setIsProfileLoading(true);
       setErrorMessage(null);
 
       try {
-        const response = await (authFetch ?? fetch)(`${API_BASE_URL}/goals/getcurrentgoals`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to load goals");
-        }
-
-        const data = await response.json();
-        const normalized = Array.isArray(data) ? data : data?.data ?? [];
-        setGoals(normalized);
+        await Promise.all([fetchGoals(), fetchProfile()]);
       } catch (error: any) {
-        setErrorMessage("Failed to load goals");
+        setErrorMessage("Failed to reload home");
+        console.error("Failed to reload home", error);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
+        setIsProfileLoading(false);
       }
     },
-    [token, authFetch]
+    [token, fetchGoals, fetchProfile]
   );
 
-  const fetchProfile = useCallback(async () => {
-    if (!token) return;
-
-    setIsProfileLoading(true);
-
-    try {
-      const response = await (authFetch ?? fetch)(`${API_BASE_URL}/user/profile`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load profile");
-      }
-
-      const data = await response.json();
-      setProfile(data);
-    } catch (error) {
-      console.error("Failed to load profile", error);
-    } finally {
-      setIsProfileLoading(false);
-    }
-  }, [token, authFetch]);
-
-  useEffect(() => {
-    void fetchGoals(false);
-    void fetchProfile();
-  }, [fetchGoals, fetchProfile]);
+  React.useEffect(() => {
+    void reloadHome(false);
+  }, [reloadHome]);
 
   const sortedGoals = useMemo(() => {
     return [...goals].sort((a, b) => getGoalDateValue(a) - getGoalDateValue(b));
@@ -169,7 +171,7 @@ export default function HomeScreen() {
 
   const firstName = profile?.first_name?.trim() || "Dream";
   const lastName = profile?.last_name?.trim() || "Studio";
-  const bountyValue = profile?.bounty_amount ?? profile?.bounty_balance ?? 0;
+  const bountyValue =  profile?.bounty_balance ?? 0;
 
   if (!token) {
     return (
@@ -202,20 +204,20 @@ export default function HomeScreen() {
           <View style={styles.profileActionRow}>
             <Pressable
               style={styles.logoutLink}
-                onPress={async () => {
-                  await auth?.logout?.();
-                }}
-              >
-                {({ pressed }) => (
-                  <Text
-                    style={[
-                      styles.logoutLinkText,
-                      pressed && styles.logoutLinkTextPressed,
-                    ]}
-                  >
-                    Log out
-                  </Text>
-                )}
+              onPress={async () => {
+                await auth?.logout?.();
+              }}
+            >
+              {({ pressed }) => (
+                <Text
+                  style={[
+                    styles.logoutLinkText,
+                    pressed && styles.logoutLinkTextPressed,
+                  ]}
+                >
+                  Log out
+                </Text>
+              )}
             </Pressable>
 
             <Pressable
@@ -249,10 +251,20 @@ export default function HomeScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            alwaysBounceVertical={true}
+            refreshing={isRefreshing}
+            onRefresh={() => {
+              void reloadHome(true);
+            }}
             renderItem={({ item }) => (
               <View style={styles.goalItem}>
                 <View style={styles.goalHeader}>
-                  <Text style={styles.goalTitle}>{item.title || item.name || "Untitled Goal"}</Text>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={styles.goalTitle}>{item.title || item.name || "Untitled Goal"}</Text>
+                    {item.goal_type_name ? (
+                      <Text style={styles.goalTypeName}>{item.goal_type_name}</Text>
+                    ) : null}
+                  </View>
 
                   {item.verification_type === "quiz" &&
                   (item.quiz_question_status === "pending" ||
@@ -278,7 +290,7 @@ export default function HomeScreen() {
                 {item.verification_result === "approved" ? (
                   <Text style={styles.approvedText}>Completed</Text>
                 ) : item.verification_result === "rejected" ? (
-                  <Text style={styles.rejectedText}>Failed - last submission</Text>
+                  <Text style={styles.rejectedText}>Failed</Text>
                 ) : null}
 
                 {item.description ? (
@@ -295,11 +307,6 @@ export default function HomeScreen() {
             ListEmptyComponent={
               !isLoading ? <Text style={styles.emptyText}>No goals yet.</Text> : null
             }
-            refreshing={isRefreshing}
-            onRefresh={() => {
-              void fetchGoals(true);
-              void fetchProfile();
-            }}
           />
         </View>
 

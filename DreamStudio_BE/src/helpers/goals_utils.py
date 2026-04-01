@@ -7,6 +7,7 @@ def current_goals_for_user(user_id: UUID, db: Session):
 SELECT
   g.*,
   v_latest.id          AS verification_id,
+  gt.name              AS goal_type_name,
   gt.verification_type AS verification_type,
   v_latest.result      AS verification_result,
   v_latest.updated_at  AS verification_updated_at

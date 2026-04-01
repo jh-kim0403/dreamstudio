@@ -386,139 +386,201 @@ export default function VerificationScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.heading}>Verification</Text>
-      {!goalId ? <Text>Missing goal id.</Text> : null}
-      {isLoading ? <ActivityIndicator style={styles.topSpacer} /> : null}
-      {errorMessage ? (
-        <Text style={[styles.errorText, styles.topSpacer]}>{errorMessage}</Text>
-      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <View style={styles.headerBlock}>
+            <Text style={styles.heading}>Verification</Text>
+            <Text style={styles.subtitle}>
+              Complete the required verification step to confirm your goal
+              progress.
+            </Text>
+          </View>
 
-      {canShowQuiz ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quiz Questions</Text>
-          {quizQuestions.length === 0 ? (
-            <Text>No quiz questions available yet.</Text>
-          ) : (
-            quizQuestions.map((question, index) => (
-              (() => {
-                const key = question.quiz_id || String(index);
-                const selected = quizAnswers[key] ?? null;
-                return (
-              <View key={key} style={styles.questionCard}>
-                <Text style={styles.questionLabel}>Q{index + 1}</Text>
-                <Text>{question.question}</Text>
-                <View style={styles.answerRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.answerButton,
-                      styles.answerButtonSpacing,
-                      selected === true
-                        ? styles.answerButtonActive
-                        : styles.answerButtonInactive,
-                    ]}
-                    onPress={() =>
-                      setQuizAnswers((prev) => {
-                        setSubmitError(null);
-                        setSubmitResult(null);
-                        return {
-                          ...prev,
-                          [key]: true,
-                        };
-                      })
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.answerText,
-                        selected === true
-                          ? styles.answerTextActive
-                          : styles.answerTextInactive,
-                      ]}
-                    >
-                      True
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.answerButton,
-                      selected === false
-                        ? styles.answerButtonActive
-                        : styles.answerButtonInactive,
-                    ]}
-                    onPress={() =>
-                      setQuizAnswers((prev) => {
-                        setSubmitError(null);
-                        setSubmitResult(null);
-                        return {
-                          ...prev,
-                          [key]: false,
-                        };
-                      })
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.answerText,
-                        selected === false
-                          ? styles.answerTextActive
-                          : styles.answerTextInactive,
-                      ]}
-                    >
-                      False
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+          {!goalId ? (
+            <View style={styles.noticeCard}>
+              <Text style={styles.noticeText}>Missing goal id.</Text>
+            </View>
+          ) : null}
+
+          {isLoading ? (
+            <View style={styles.statusBlock}>
+              <ActivityIndicator />
+              <Text style={styles.statusText}>Loading verification details...</Text>
+            </View>
+          ) : null}
+
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
+
+          {canShowQuiz ? (
+            <View style={styles.formCard}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Quiz Questions</Text>
+                <Text style={styles.sectionDescription}>
+                  Answer all questions before submitting your verification.
+                </Text>
               </View>
-                );
-              })()
-            ))
-          )}
-          {submitError ? (
-            <Text style={styles.submitError}>{submitError}</Text>
-          ) : null}
-          {quizQuestions.length > 0 ? (
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionButtonTopSpacing,
-                isSubmitting
-                  ? styles.actionButtonDisabled
-                  : styles.actionButtonActive,
-              ]}
-              onPress={handleQuizSubmit}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.actionButtonText}>{isSubmitting ? "Submitting..." : "Submit answers"}</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      ) : null}
 
-      {canShowPhoto ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Photo Verification</Text>
-          {verificationId ? null : (
-            <Text style={styles.mutedText}>Waiting for verification id from backend.</Text>
-          )}
-          {uploadError ? (
-            <Text style={styles.uploadError}>{uploadError}</Text>
+              {quizQuestions.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>No quiz questions available yet.</Text>
+                </View>
+              ) : (
+                quizQuestions.map((question, index) =>
+                  (() => {
+                    const key = question.quiz_id || String(index);
+                    const selected = quizAnswers[key] ?? null;
+
+                    return (
+                      <View key={key} style={styles.questionCard}>
+                        <Text style={styles.questionLabel}>Q{index + 1}</Text>
+                        <Text style={styles.questionText}>{question.question}</Text>
+
+                        <View style={styles.answerRow}>
+                          <TouchableOpacity
+                            activeOpacity={0.9}
+                            style={[
+                              styles.answerButton,
+                              styles.answerButtonSpacing,
+                              selected === true
+                                ? styles.answerButtonActive
+                                : styles.answerButtonInactive,
+                            ]}
+                            onPress={() =>
+                              setQuizAnswers((prev) => {
+                                setSubmitError(null);
+                                setSubmitResult(null);
+                                return {
+                                  ...prev,
+                                  [key]: true,
+                                };
+                              })
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.answerText,
+                                selected === true
+                                  ? styles.answerTextActive
+                                  : styles.answerTextInactive,
+                              ]}
+                            >
+                              True
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            activeOpacity={0.9}
+                            style={[
+                              styles.answerButton,
+                              selected === false
+                                ? styles.answerButtonActive
+                                : styles.answerButtonInactive,
+                            ]}
+                            onPress={() =>
+                              setQuizAnswers((prev) => {
+                                setSubmitError(null);
+                                setSubmitResult(null);
+                                return {
+                                  ...prev,
+                                  [key]: false,
+                                };
+                              })
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.answerText,
+                                selected === false
+                                  ? styles.answerTextActive
+                                  : styles.answerTextInactive,
+                              ]}
+                            >
+                              False
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })()
+                )
+              )}
+
+              {submitError ? (
+                <Text style={styles.submitError}>{submitError}</Text>
+              ) : null}
+
+              {quizQuestions.length > 0 ? (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  style={[
+                    styles.actionButton,
+                    styles.actionButtonTopSpacing,
+                    isSubmitting
+                      ? styles.actionButtonDisabled
+                      : styles.actionButtonActive,
+                  ]}
+                  onPress={handleQuizSubmit}
+                  disabled={isSubmitting}
+                >
+                  <Text style={styles.actionButtonText}>
+                    {isSubmitting ? "Submitting..." : "Submit answers"}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
           ) : null}
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isUploading
-                ? styles.actionButtonDisabled
-                : styles.actionButtonActive,
-            ]}
-            onPress={handlePhotoUpload}
-            disabled={isUploading}
-          >
-            <Text style={styles.actionButtonText}>{isUploading ? "Uploading..." : "Take photo & upload"}</Text>
-          </TouchableOpacity>
+
+          {canShowPhoto ? (
+            <View style={styles.formCard}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Photo Verification</Text>
+                <Text style={styles.sectionDescription}>
+                  Take a live photo and upload it to complete verification.
+                </Text>
+              </View>
+
+              <View style={styles.infoCard}>
+                <Text style={styles.infoTitle}>Before you upload</Text>
+                <Text style={styles.infoText}>
+                  Make sure your photo is clear and location permission is enabled.
+                </Text>
+              </View>
+
+              {verificationId ? null : (
+                <Text style={styles.mutedText}>
+                  Waiting for verification id from backend.
+                </Text>
+              )}
+
+              {uploadError ? (
+                <Text style={styles.uploadError}>{uploadError}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={[
+                  styles.actionButton,
+                  isUploading
+                    ? styles.actionButtonDisabled
+                    : styles.actionButtonActive,
+                ]}
+                onPress={handlePhotoUpload}
+                disabled={isUploading}
+              >
+                <Text style={styles.actionButtonText}>
+                  {isUploading ? "Uploading..." : "Take photo & upload"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
-      ) : null}
       </ScrollView>
+
       <Modal
         transparent
         visible={showUploadModal}
@@ -538,6 +600,7 @@ export default function VerificationScreen() {
                 : uploadResult || "Photo upload failed."}
             </Text>
             <TouchableOpacity
+              activeOpacity={0.9}
               style={styles.modalButton}
               onPress={() => {
                 setShowUploadModal(false);
@@ -549,27 +612,31 @@ export default function VerificationScreen() {
           </View>
         </View>
       </Modal>
+
       <Modal
-      transparent
-      visible={showSubmitModal}
-      animationType="fade"
-      onRequestClose={() => setShowSubmitModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Quiz Submitted</Text>
-          <Text style={styles.modalBody}>Your answers were sent successfully.</Text>
-          <TouchableOpacity
-            style={styles.modalButton}
-            onPress={() => {
-              setShowSubmitModal(false);
-              navigateHome();
-            }}
-          >
-            <Text style={styles.actionButtonText}>Back to Home</Text>
-          </TouchableOpacity>
+        transparent
+        visible={showSubmitModal}
+        animationType="fade"
+        onRequestClose={() => setShowSubmitModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Quiz Submitted</Text>
+            <Text style={styles.modalBody}>
+              Your answers were sent successfully.
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.modalButton}
+              onPress={() => {
+                setShowSubmitModal(false);
+                navigateHome();
+              }}
+            >
+              <Text style={styles.actionButtonText}>Back to Home</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </Modal>
     </>
   );

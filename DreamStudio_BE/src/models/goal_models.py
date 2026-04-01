@@ -52,6 +52,7 @@ class currentGoalResponse(BaseModel):
     stripe_setup_intent_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    goal_type_name: str
     verification_id: Optional[UUID] = None
     verification_type: Optional[str] = None
     verification_result: Optional[str] = None

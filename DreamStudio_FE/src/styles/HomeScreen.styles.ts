@@ -209,11 +209,15 @@ export const styles = StyleSheet.create({
   },
 
   goalTitle: {
-    flex: 1,
     fontSize: isTablet ? 18 : 16,
     fontWeight: "600",
     color: COLORS.textPrimary,
-    marginRight: 10,
+  },
+
+  goalTypeName: {
+    fontSize: isTablet ? 13 : 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
 
   pendingQuizText: {
